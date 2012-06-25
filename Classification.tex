@@ -1,0 +1,44 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8x]{inputenc}
+\usepackage{preamble}
+
+%opening
+\title{}
+\author{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+
+\end{abstract}
+
+\section{}
+
+Erm, I've thought about it a little bit more, not sure if I've got
+anywhere. So the integral
+\begin{multline*}
+ \int \max(x_{1:n}) N(x_{1:n}) \ud x_{1:n} \\
+= \int_{R_1} x_1 N(x_1) \ud x_1 + \int_{R_2} x_2 N(x_2) \ud x_2 + \ldots +
+\int_{R_n} x_n N(x_n) \ud x_n
+\end{multline*}
+where the regions
+$$R_i = \{x_i: x_i > x_j,\ \forall j \neq i \}$$
+are defined by $(n-1)$ hyperplanes, which are not orthogonal to one
+another. Nonetheless, there's nothing stopping us from changing
+coordinates from $x_{1:n}$ to the normal vectors of those hyperplanes
+and then applying EP as normal. That is, if we had $x_1$, $x_2$ and $x_3$,
+the first region would be defined by $$x_1 - x_2 = 0$$ and $$x_1 - x_3 = 0.$$
+We'd find what the joint, 2D Gaussian over $(x_1 - x_2)$ and $(x_1 - x_3)$
+is, and then evaluate  $$\int_{R_1} x_1 N(x_1) \ud x_1$$ in that basis. I am
+probably missing something?
+
+% Our approximation is poor if the length scales in different dimensions are very different and if the correlations (or anti-correlations) between dimensions are neither very strong nor very weak.
+% 
+% 1. set x0 at the origin.
+% 2. set x1 at d(x1,x0) along the first axis.
+% n. we have (n-1) points all correctly arrayed in R^(n-2). we need to add in xn, so that d(xn,xi) meets constraints for i = 1...(n-1). Each of those constraints is equivalent to xn lying on (n - 2)-spheres centered on points x_1...(n-1). First, find the set of points on the intersection of the first two hyperspheres, defined by d(xn,x0) and d(xn,x1). If there is no intersection, then we must have d(x1,x0) > d(xn,x1) + d(xn,x0), d(xn,x0) > d(xn,x1) + d(x1,x0) or d(xn,x1) > d(xn,x0) + d(x0,x1), violating the triangle inequality. Now consider the intersection of that intersection and the next (n-2)-sphere, defined by d(xn,x2). Similarly, if this new intersection does not exist, the triangle inequality is violated. By continuing in this way, we can determine the intersection of all (n-2)-spheres. We define xn as one of the points in that intersection.
+
+
+\end{document}

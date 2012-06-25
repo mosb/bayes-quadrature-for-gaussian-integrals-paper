@@ -1,0 +1,114 @@
+\documentclass{article} % For LaTeX2e
+\usepackage{nips12submit_e,times}
+%\documentstyle[nips12submit_09,times,art10]{article} % For LaTeX 2.09
+\usepackage{preamble}
+
+\title{Formatting Instructions for NIPS 2012}
+
+
+\author{
+David S.~Hippocampus\thanks{ Use footnote for providing further information
+about author (webpage, alternative address)---\emph{not} for acknowledging
+funding agencies.} \\
+Department of Computer Science\\
+Cranberry-Lemon University\\
+Pittsburgh, PA 15213 \\
+\texttt{hippo@cs.cranberry-lemon.edu} \\
+\And
+Coauthor \\
+Affiliation \\
+Address \\
+\texttt{email} \\
+\AND
+Coauthor \\
+Affiliation \\
+Address \\
+\texttt{email} \\
+\And
+Coauthor \\
+Affiliation \\
+Address \\
+\texttt{email} \\
+\And
+Coauthor \\
+Affiliation \\
+Address \\
+\texttt{email} \\
+(if needed)\\
+}
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to \LaTeX{} to determine where to break
+% the lines. Using \AND forces a linebreak at that point. So, if \LaTeX{}
+% puts 3 of 4 authors names on the first line, and the last on the second
+% line, try using \AND instead of \And before the third author name.
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
+
+%\nipsfinalcopy % Uncomment for camera-ready version
+
+\begin{document}
+
+
+\maketitle
+
+\begin{abstract}
+
+\end{abstract}
+
+
+\section{Introduction}
+
+\begin{itemize}
+ \item error function is non-elementary, but efficient means for its computation exist. 
+ \item PCA
+ \item acknoeldge Mackay's humble gaussian objection to eigenvectors, but the latent function used for GP classificaiton is dimensionless (or else the logistic, for example, wouldn't work).
+\item ignore correlations between numerator and denominator integrals
+\end{itemize}
+
+We assume hyperparameters are known.
+\begin{align*}
+\p{\vf\st}{\vy_d}
+& =
+\frac{\int\p{\vf\st}{\vf_d}\p{\vy_d}{\vf_d}p(\vf_d)\,\ud\vf_d}
+{\int \p{\vy_d}{\vf_d}p(\vf_d)\ud\vf_d}
+\\
+\p{\vy\st}{\vy_d}
+& =
+\frac{\iint\p{\vy\st}{\vf\st}\p{\vf\st}{\vf_d}\p{\vy_d}{\vf_d}p(\vf_d)\ud\vf\st\ud\vf_d}
+{\int\p{\vy_d}{\vf_d}p(\vf_d)\ud\vf_d}\,.
+\end{align*}
+\begin{align*}
+\p{\vy_d}{\vf_d} & \deq \prod_{i=1}^{\card{d}}\p{y_i}{f_i} \\
+\p{\vy\st}{\vf\st} & \deq \prod_{i=1}^{\card{\star}}\p{y_i}{f_i}
+\end{align*}
+
+
+
+For classification, we adopt the step function likelihood
+\begin{align*}
+ \p{y_i=1}{f_i} & \deq
+\begin{cases}
+1, & f_i>0\\
+0, & f_i\leq 0\,.
+\end{cases}
+\intertext{More generally, we consider the rectangular likelihood to allow censored regression}
+ \p{y_i=1}{f_i} & \deq
+\begin{cases}
+1, & l_i\leq f_i<u_i\\
+0, & \text{otherwise},
+\end{cases}
+\end{align*}
+we work with the latter henceforth.
+
+Use $S$ to represent a matrix whose columns define the vertices of a polytope enclosing the region of integration.
+\begin{align*}
+ \int_S \N{\vf}{\vm}{C}\ud \vf 
+& = \int_{V^{-1}S} \N{\vf}{V^{-1}\vm}{E}\ud \vf 
+\end{align*}
+
+
+\end{document}
