@@ -7,6 +7,9 @@
 \usepackage{preamble}
 \usepackage{natbib}
 \newcommand{\vm}{\vect{m}}
+%\newcommand{\vl}{\vect{l}}
+\newcommand{\vu}{\vect{u}}
+\newcommand{\vinf}{\vect{\infty}}
 \renewcommand{\sc}[1]{{\scshape #1}}
 
 \usepackage{usbib}
@@ -102,7 +105,7 @@ Note that the above assumes implicit conditioning on hyperparameters. Where requ
 We motivate the relevance of Gaussian integrals to GP classification.
 
 We assume hyperparameters are known.
-\begin{align*}
+\begin{align}
 \p{f\st}{\vy}
 & =
 \frac{\int\p{f\st}{\vf}\p{\vy}{\vf}p(\vf)\,\ud\vf}
@@ -112,15 +115,15 @@ We assume hyperparameters are known.
 & =
 \frac{\iint\p{y\st}{f\st}\p{f\st}{\vf}\p{\vy}{\vf}p(\vf)\ud f\st\ud\vf}
 {\int\p{\vy}{\vf}p(\vf)\ud\vf}\,.
-\end{align*}
-\begin{equation*}
+\end{align}
+\begin{equation}
 \p{\vy}{\vf} \deq \prod_{i=1}^{D}\p{y_d}{f_d}
-\end{equation*}
+\end{equation}
 
 
 
 For classification, we adopt the step function likelihood
-\begin{align*}
+\begin{align}
  \p{y_d=1}{f_d} & \deq
 \begin{cases}
 1, & f_d>0\\
@@ -132,7 +135,7 @@ For classification, we adopt the step function likelihood
 1, & l_d\leq f_d<u_d\\
 0, & \text{otherwise},
 \end{cases}
-\end{align*}
+\end{align}
 we work with the latter henceforth.
 
 \section{Bayesian Quadrature} \label{sec:bq}
@@ -188,28 +191,46 @@ $\mean{\inty{f g}}{\vf_s, \vect{g}_s}$ for an integral $\int f(x) g(x) p(x) \ud 
 \section{Bayesian quadrature for Gaussian integrals}
 
 Consider the general Gaussian integral problem
-\begin{equation}
- \Psi \deq \int_{l_1}^{u_1}\ldots\int_{l_D}^{u_D} \N{\vf}{\vm}{C} \ud f_D \ldots \ud f_1\,.
-\end{equation}
+\begin{align}\label{eq:GI}
+ \Psi\st & \deq \int_{\vl}^{\vu} \N{\vf}{\vmu}{\Sigma} \ud \vf\nonumber\\
+& \deq \int_{l_1}^{u_1}\ldots\int_{l_D}^{u_D} \N{\vf}{\vmu}{\Sigma} \ud f_D \ldots \ud f_1\,.
+\end{align}
 Bayesian quadrature (\sc{bq}) approaches this problem by assigning a \gpb prior to the function
 \begin{equation}
- \psi(\vf) \deq \N{\vf}{\vm}{C}\,.
+ \psi(\vf) \deq \N{\vf}{\vmu}{\Sigma}\,.
 \end{equation}
-In order to employ \sc{bq}, we must assume an improper input distribution $p(\vf) = 1$. This introduces some difficulties. In particular, if we take a stationary covariance for $\psi$, as is typically assumed by \sc{bq}, the predictive variance for $\Psi$ is always infinite. This can be explained by noting that, given finite observations of $\psi$, there will always be an infinite amount of potentially unexplored mass of the integrand times the prior. This infinite variance is not reflective of our true state of knowledge, however. We know that the light tails of the Gaussian cause $\psi$ to be arbitrarily small sufficiently far from $\vm$, bounding how much mass can have been missed. We can express this knowledge by using a more appropriate covariance. Note that if we have a Gaussian prior $\N{a}{\alpha}{\beta^2}$ for $a$, the prior for its product $c = a b$ with known $b$ is $\N{c}{b \alpha}{b \beta^2 b}$. In our case, we model $\psi$ as being the product of an unknown function, possessing a squared exponential covariance, and an isotropic Gaussian $\N{f}{\vm}{\Lambda}$. Here $\Lambda = \lambda^2 I$, where $I$ is the identity matrix, and $\lambda$ is the largest eigenvalue of $C$. This Gaussian represents a bounding envelope for $\psi$; we expect $\psi$ to drop to zero at least as quickly as it. Hence we arrive at the covariance for $\psi$
+In order to employ \sc{bq}, we must assume an improper input distribution $p(\vf) = 1$. This introduces some difficulties. In particular, if we take a stationary covariance for $\psi$, as is typically assumed by \sc{bq}, the predictive variance for $\Psi\st$ is always infinite. This can be explained by noting that, given finite observations of $\psi$, there will always be an infinite amount of potentially unexplored mass of the integrand times the prior. This infinite variance is not reflective of our true state of knowledge, however. We know that the light tails of the Gaussian cause $\psi$ to be arbitrarily small sufficiently far from $\vm$, bounding how much mass can have been missed. We can express this knowledge by using a more appropriate covariance. Note that if we have a Gaussian prior $\N{a}{\alpha}{\beta^2}$ for $a$, the prior for its product $c = a b$ with known $b$ is $\N{c}{b \alpha}{b \beta^2 b}$. In our case, we model $\psi$ as being the product of an unknown function, possessing a squared exponential covariance, and an isotropic Gaussian $\N{f}{\vmu}{\Lambda}$. Here $\Lambda = \lambda^2 I$, where $I$ is the identity matrix, and $\lambda$ is the largest eigenvalue of $C$. This Gaussian represents a bounding envelope for $\psi$; we expect $\psi$ to drop to zero at least as quickly as it. Hence we arrive at the covariance for $\psi$
 \begin{align}
- & \text{cov}(\psi(\vf), \psi(\vf')) \deq K(\vf, \vf')\nonumber\\ & = \N{\vf}{\vm}{\Lambda} \N{\vf}{\vf'}{D} \N{\vf'}{\vm}{\Lambda}
+ & \text{cov}\bigl(\psi(\vf), \psi(\vf')\bigr) \deq K(\vf, \vf')\nonumber\\ & = \N{\vf}{\vmu}{\Lambda} \N{\vf}{\vf'}{D} \N{\vf'}{\vmu}{\Lambda}\,.
 \end{align}
 
+Another difference to traditional \sc{bq} is the nature of the observations available to us. As for standard \sc{bq}, we are, of course, able to evaluate $\psi(\vf)$ for any $\vf$. However, due to the curse of dimensionality, we are likely to require a very great number of such sample evaluations in order to perform accurate inference for $\Psi\st$ for high dimension $D$. Similar approaches built around Monte Carlo sampling (cite Genz) exist, but are similarly recognised as requiring a prohibitively large number of samples for high dimension. 
 
+An alternative is the class of `slice' observations 
+\begin{equation}
+ \int_{-\infty}^{\infty} \ldots \int_{l_d}^{u_d} \ldots \int_{-\infty}^{\infty} \psi(\vf) \ud f_D \ldots \ud f_d\ldots \ud f_1,
+\end{equation}
+which is expressible using standard error functions. Just as for sample evaluations, however, such observations are not very informative in high dimension. The problem for both types of observation is that, for increasingly high $D$, they are informative of only an increasingly tiny quantity of the domain over which $\psi$ must be integrated. What is needed is an observation of another integral over the whole of $\vf$.
+
+Such an integral that is expressible in closed form is the Gaussian convolution
+ \begin{equation}\label{eq:conv}
+ \Psi_i = \int_{-\vinf}^{\vinf} \N{\vf}{\vm_i}{V_i} \psi(\vf) \ud \vf = \N{\vm_i}{\vmu}{V_i+\Sigma}.
+\end{equation}
+ If the convolving Gaussian is `close' to the product of top hat functions required to reproduce \eqref{eq:GI}, then such convolutions may permit useful inference for $\Psi\st$. The covariance between $\Psi\st$ and the convolution $\Psi_i$ is
+\begin{align}\label{eq:Ksti}
+\text{cov}\bigl(\Psi\st, \Psi_i\bigr) =
+\int_{\vl}^{\vu} \int_{-\vinf}^{\vinf}  K(\vf, \vf') \N{\vf'}{\vm_i}{V_i} \ud \vf' \ud \vf 
+\end{align}
+While we can compute $\Psi_i$ for arbitrary $V_i$, the computation of \eqref{eq:Ksti} requires that $V$ be diagonal. 
 
 
 % the below is not relevant to the current approach
 
 % Use $S$ to represent a matrix whose columns define the vertices of a polytope enclosing the region of integration.
-% \begin{align*}
+% \begin{align}
 %  \int_S \N{f}{m}{C}\ud f 
 % & = \int_{V^{-1}S} \N{f}{V^{-1}m}{E}\ud f 
-% \end{align*}
+% \end{align}
 
 
 
