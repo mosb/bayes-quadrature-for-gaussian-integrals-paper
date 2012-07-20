@@ -6,6 +6,8 @@
 %\usepackage{epsfig} % less modern
 \usepackage{preamble}
 \usepackage{natbib}
+\newcommand{\vm}{\vect{m}}
+\renewcommand{\sc}[1]{{\scshape #1}}
 
 \usepackage{usbib}
 \bibliographystyle{myusmeg-a}
@@ -13,7 +15,7 @@
 \renewcommand{\bibnamefont}[1]{\textsc{#1}}
 \renewcommand*{\bibname}{biblography}
 
-\DeclareCaptionType{copyrightbox}
+%\DeclareCaptionType{copyrightbox}
 
 \begin{document}
 
@@ -36,6 +38,7 @@ Pittsburgh PA 15213, USA\\
 ]
 
 \begin{abstract}%   <- trailing '%' for backward compatibility of .sty file
+Estimating multivariate Gaussian cumulative distribution functions is a problem with broad relevance. One example is Gaussian process classification, where the problem is usually tackled using Expectation Propagation. We propose an alternative method built around Bayesian quadrature; we use observations of convolutions of the Gaussian to perform inference for the desired Gaussian integral. We additionally describe a procedure to select the most informative observations by minimising the expected variance in the Gaussian integral. We demonstrate our method both for synthetic Gaussian integrals, and on a real Gaussian process classification problem. 
 \end{abstract}
 
 
@@ -44,53 +47,172 @@ Pittsburgh PA 15213, USA\\
 \begin{itemize}
  \item error function is non-elementary, but efficient means for its computation exist. 
  \item PCA
- \item acknoeldge Mackay's humble gaussian objection to eigenvectors, but the latent function used for GP classificaiton is dimensionless (or else the logistic, for example, wouldn't work).
+ \item acknoeldge Mackay's humble gaussian objection to eigenvectors, but the latent function used for GP classification is dimensionless (or else the logistic, for example, wouldn't work).
 \item ignore correlations between numerator and denominator integrals
 \end{itemize}
 
+\section{Gaussian Processes}
+Since our \acro{bq} approach makes extensive use of Gaussian processes (\gp) \cite{GPsBook}, in this section we provide a brief introduction to \gp s and to our notation. A \gpb is defined as a distribution over the functions $f: \mathcal{X} \rightarrow \mathbb{R}$ such that the distribution over the possible function values on any finite subset of $\mathcal{X}$ is multivariate Gaussian. For clarity, we henceforth assume $\mathcal{X} = \mathbb{R}$, although all results generalise to $\mathbb{R}^n$. For a function $f$, the prior distribution over its vector of values $\vf$ on $\vlfv \subset \mathcal{X}$ is
+\begin{align}%\label{eq:\gpbDefn}
+\textstyle
+ \po{\vf}\deq \N{\vf}{\vmu}{K}
+ \deq\frac{1}{\sqrt{\det({2\pi K})}}\,\exp \big(-\frac{1}{2}\,(\vf-\vmu)\tra\,K\inv\,(\vf-\vmu)\big).
+\end{align}
+This distribution is specified by mean and covariance functions, which give the mean vector $\vmu$ and covariance matrix $K$ respectively. 
+We choose Gaussian (squared exponential) covariance functions,
+\begin{align} \label{eq:Gaussian_cov_fn}
+% K(\vlfv,\vlfv') & \deq \prod_{e=1}^{E} K_e\big(\phi\pha_e,\phi_e'\big)\\
+\textstyle
+K(\lfv_1,\lfv_2)& \deq h^2\,\N{\lfv_1}{\lfv_2}{w}.
+\end{align} 
+Here $h$ specifies the output scale over $f$, while $w$ defines a (squared) input scale over $\lfv$. 
+% Note that if $x$ has dimension greater than one, $w$ is a covariance matrix; we'll assume $w$ is diagonal. 
+Given observations $(\vlfv_s,\vf_s)$, we are interested in making predictions about  $f_\star$ at input $\lfv_\star$. We will assume that function inputs such as $\vlfv_s$ and $\lfv_\star$ are always known; they will not be explicitly represented. With this information, we have the predictive equations
+\begin{equation}
+ \pskinny{f\st}{\vf_s} = 
+\bN{f\st}
+{\meancond{f}{\vlfv_\star}{s}}
+{\covcond{f}{\vlfv_\star}{s}}\,,
+\end{equation}
+where the mean $m$, covariance $C$, and variance $V$ are
+\begin{align} 
+\textstyle
+\meancond{f}{\lfv_\star}{s}
+& \deq \mean{f_\star}{\vf_s}
+= \mu(\lfv_\star)+
+K(\lfv_\star,\vlfv_s)
+K(\vlfv_s,\vlfv_s)\inv
+\bigl(\vf_s-{\mu}(\vlfv_s)\bigr)\label{eq:GPMean}
+\\[0.2cm]
+C_{f|s}(\lfv_\star, \lfv'_\star)
+& \deq C(f_\star,f'_\star|\vf_s) 
+=K(\lfv_\star,\lfv'_\star) - 
+K(\lfv_\star,\vlfv_s)
+K(\vlfv_s,\vlfv_s)\inv
+K(\vlfv_s,\lfv'_\star)%\label{eq:\gpbCov}
+\\[0.2cm]
+\covcond{f}{\lfv_\star}{s}
+&\deq {\cov{f_\star}{\vf_s}} 
+= C_{f|s}(\lfv_\star, \lfv_\star).
+\end{align} 
+Note that the above assumes implicit conditioning on hyperparameters. Where required for disambiguation, we'll make this explicit, as per $m_{f|s,w}(x\st) \deq \mean{f\st}{\vf_s, w}$ and so forth.
+
+\section{Gaussian process classification}
+
+We motivate the relevance of Gaussian integrals to GP classification.
+
 We assume hyperparameters are known.
 \begin{align*}
-\p{\vf\st}{\vy_d}
+\p{f\st}{\vy}
 & =
-\frac{\int\p{\vf\st}{\vf_d}\p{\vy_d}{\vf_d}p(\vf_d)\,\ud\vf_d}
-{\int \p{\vy_d}{\vf_d}p(\vf_d)\ud\vf_d}
+\frac{\int\p{f\st}{\vf}\p{\vy}{\vf}p(\vf)\,\ud\vf}
+{\int \p{\vy}{\vf}p(\vf)\ud\vf}
 \\
-\p{\vy\st}{\vy_d}
+\p{y\st}{\vy}
 & =
-\frac{\iint\p{\vy\st}{\vf\st}\p{\vf\st}{\vf_d}\p{\vy_d}{\vf_d}p(\vf_d)\ud\vf\st\ud\vf_d}
-{\int\p{\vy_d}{\vf_d}p(\vf_d)\ud\vf_d}\,.
+\frac{\iint\p{y\st}{f\st}\p{f\st}{\vf}\p{\vy}{\vf}p(\vf)\ud f\st\ud\vf}
+{\int\p{\vy}{\vf}p(\vf)\ud\vf}\,.
 \end{align*}
-\begin{align*}
-\p{\vy_d}{\vf_d} & \deq \prod_{i=1}^{\card{d}}\p{y_i}{f_i} \\
-\p{\vy\st}{\vf\st} & \deq \prod_{i=1}^{\card{\star}}\p{y_i}{f_i}
-\end{align*}
+\begin{equation*}
+\p{\vy}{\vf} \deq \prod_{i=1}^{D}\p{y_d}{f_d}
+\end{equation*}
 
 
 
 For classification, we adopt the step function likelihood
 \begin{align*}
- \p{y_i=1}{f_i} & \deq
+ \p{y_d=1}{f_d} & \deq
 \begin{cases}
-1, & f_i>0\\
-0, & f_i\leq 0\,.
+1, & f_d>0\\
+0, & f_d\leq 0\,.
 \end{cases}
 \intertext{More generally, we consider the rectangular likelihood to allow censored regression}
- \p{y_i=1}{f_i} & \deq
+ \p{y_d=1}{f_d} & \deq
 \begin{cases}
-1, & l_i\leq f_i<u_i\\
+1, & l_d\leq f_d<u_d\\
 0, & \text{otherwise},
 \end{cases}
 \end{align*}
 we work with the latter henceforth.
 
-Use $S$ to represent a matrix whose columns define the vertices of a polytope enclosing the region of integration.
-\begin{align*}
- \int_S \N{\vf}{\vm}{C}\ud \vf 
-& = \int_{V^{-1}S} \N{\vf}{V^{-1}\vm}{E}\ud \vf 
-\end{align*}
+\section{Bayesian Quadrature} \label{sec:bq}
+
+% Note that maximum likelihood is also subject to issues. $\p{D}{\lfv,I}$, how come (known) $I$ is on the right and (known) $D$ is on the left? 
+
+\emph{Bayesian quadrature} \cite{BZHermiteQuadrature,BZMonteCarlo} is a means of performing Bayesian inference about the value of a potentially nonanalytic integral, $\inty{f} \deq \int f(x) p(x) \ud x$.
+%Note that we use a condensed notation; this and all integrals to follow are definite integrals over the entire domain of interest.
+We assume a Gaussian density
+$\po{\lfv} \deq \N{\lfv}{\nu_{\lfv}}{\lambda_{\lfv}}$,
+although other convenient forms, or, if necessary, the use of an importance re-weighting trick ($q(x) = \nicefrac{q(x)}{p(x)} p(x)$ for any $q(x)$), allow any other integral to be approximated. 
+% If $\lfv$ is a vector, $\nu_{\lfv}$ is a  vector of identical size, and $\lambda_{\lfv}$ an appropriate covariance matrix.
+
+%\textcolor{red}{[I'm hoping to re-write the next two paragraphs; it's way too indirect, and I think the philosophical foundations of \acro{mcmc} are a poor avenue of attack]}
+Quadrature involves evaluating $f(\lfv)$ at a vector of sample points $\vlfv_s$, giving $\vf\pha_s\deq f(\vlfv_s)$. Often this evaluation is computationally expensive; the consequent sparsity of samples introduces uncertainty about the function $f$ between them, and hence uncertainty about the integral $\inty{f}$.
+
+%As ever in the face of uncertainty, we address the estimation of the value of our integral as a problem of Bayesian inference \cite{BZNumericalAnalysis}. 
+
+%In considering any problem of inference, we need to be clear about both what information we have and which uncertain variables we are interested in. In our case, both the values $f(\vlfv_s)$ and their locations $\vlfv_s$ represent valuable pieces of knowledge. As discussed by \cite{MCUnsound}, traditional Monte Carlo, which approximates as
+%\begin{equation} \label{eq:MC_dntegral_estimate}
+%\inty{f} \simeq \frac{1}{\card{s}} \sum_{i=1}^{\card{s}} f(\lfv_d)\,,
+%\end{equation}
+%effectively ignores the information content of $\vlfv_s$, leading to unsatisfactory behaviour.
+%\footnote{  For example, imagine that we had $\card{s}=3$, and $\lfv_1 = \lfv_2$. In this case, the identical value $q(\lfv_1)= q(\lfv_2)$ will receive $\nicefrac{2}{3}$ of the weight, whereas the equally useful $q(\lfv_3)$ will receive only $\nicefrac{1}{3}$. \textcolor{red}{I'm not crazy about this argument, since the weightings are also incorporating information about the prior...} }
+
+Previous work on Bayesian quadrature chooses a \gpb prior for $f$, with mean $\mu_f$ and the Gaussian covariance \eqref{eq:Gaussian_cov_fn}. Here the scales $h$ and $w$ are hyperparameters that specify the  \gpb used for Bayesian quadrature. These scales are typically fitted using type two maximum likelihood (\acro{mlii}); we will later introduce an approximate means of marginalising them in Section \ref{sec:marginalising}.
+
+% Many more of these will be implicitly introduced in the coming sections; we'll take this as given and incorporate them into the (hidden) context $I$. 
+% Note that it will later become apparent that our inference for $\inty{f}$ is independent of the $h$ quadrature hyperparameter.
+
+Variables possessing a multivariate Gaussian distribution are jointly Gaussian distributed with any affine transformations of those variables. Because integration is affine, we can hence use computed samples $\vf_s$ to perform analytic Gaussian process inference about the value of integrals over $f(\lfv)$, such as $\inty{f}$. The mean estimate for $\inty{f}$ given $\vf_s$ is
+%
+\begin{align} \label{eq:mean_dnty_f}
+\mean{\inty{f}}{\vf_s}
+& 
+=\iint \inty{f}\,\p{\inty{f}}{f}\p{f}{\vf_s} \ud \inty{f} \,\ud f                                                                                                                                                               \nonumber\\
+&
+ =\iint \inty{f}\,\dd{\inty{f}}{\int f(\lfv)\,\po{\lfv}\,\ud\lfv}
+\N{f}{\meancondfn{f}{s}}{C_{f|s}} \ud \inty{f} \,\ud f \nonumber\\
+&
+ = \int \meancondfn{f}{s}(\lfv)\,\po{\lfv}\,\ud\lfv
+\,,
+\end{align}
+which is expressible in closed-form due to standard Gaussian identities \cite{BZMonteCarlo}.
+%Note that the form of our `best estimate' for $\inty{f}$, \eqref{eq:mean_dnty_f}, is an affine combination of the samples $\vf_s$, just as for traditional quadrature or Monte Carlo techniques. 
+% Indeed, if $\mu_f$ is taken as the mean of $\vf_s$ (as is usual for \gpb inference), the second term in \eqref{eq:mean_dnty_f} can be viewed as a correction factor to the Monte Carlo estimate \eqref{eq:MC_dntegral_estimate}. \textcolor{red}{[Since we're using a different sampling strategy than \acro{mcmc} in this paper, I think the preceeding statement is kind of misleading / confusing...]}
+% \sout{Note also that $h$ represents a simple multiplicative factor to both $\ntT{s}{f}$ and $K_{f}\bigl(\vlfv_s,\vlfv_s\bigr)$, and as such cancels out of \eqref{eq:mean_dnty_f}.} 
+%
+The corresponding closed-form expression for the posterior variance of $\inty{f}$ lends itself as a natural convergence diagnostic. Similarly, we can compute the posteriors for integrals over the product of multiple, independent functions. For example, we can calculate the posterior mean 
+$\mean{\inty{f g}}{\vf_s, \vect{g}_s}$ for an integral $\int f(x) g(x) p(x) \ud x$. 
+ In the following three sections, we will expand upon the improvements this paper introduces in the use of Bayesian Quadrature for computing model evidences.
+
+\section{Bayesian quadrature for Gaussian integrals}
+
+Consider the general Gaussian integral problem
+\begin{equation}
+ \Psi \deq \int_{l_1}^{u_1}\ldots\int_{l_D}^{u_D} \N{\vf}{\vm}{C} \ud f_D \ldots \ud f_1\,.
+\end{equation}
+Bayesian quadrature (\sc{bq}) approaches this problem by assigning a \gpb prior to the function
+\begin{equation}
+ \psi(\vf) \deq \N{\vf}{\vm}{C}\,.
+\end{equation}
+In order to employ \sc{bq}, we must assume an improper input distribution $p(\vf) = 1$. This introduces some difficulties. In particular, if we take a stationary covariance for $\psi$, as is typically assumed by \sc{bq}, the predictive variance for $\Psi$ is always infinite. This can be explained by noting that, given finite observations of $\psi$, there will always be an infinite amount of potentially unexplored mass of the integrand times the prior. This infinite variance is not reflective of our true state of knowledge, however. We know that the light tails of the Gaussian cause $\psi$ to be arbitrarily small sufficiently far from $\vm$, bounding how much mass can have been missed. We can express this knowledge by using a more appropriate covariance. Note that if we have a Gaussian prior $\N{a}{\alpha}{\beta^2}$ for $a$, the prior for its product $c = a b$ with known $b$ is $\N{c}{b \alpha}{b \beta^2 b}$. In our case, we model $\psi$ as being the product of an unknown function, possessing a squared exponential covariance, and an isotropic Gaussian $\N{f}{\vm}{\Lambda}$. Here $\Lambda = \lambda^2 I$, where $I$ is the identity matrix, and $\lambda$ is the largest eigenvalue of $C$. This Gaussian represents a bounding envelope for $\psi$; we expect $\psi$ to drop to zero at least as quickly as it. Hence we arrive at the covariance for $\psi$
+\begin{align}
+ & \text{cov}(\psi(\vf), \psi(\vf')) \deq K(\vf, \vf')\nonumber\\ & = \N{\vf}{\vm}{\Lambda} \N{\vf}{\vf'}{D} \N{\vf'}{\vm}{\Lambda}
+\end{align}
 
 
 
 
-%\bibliography{bub}
+% the below is not relevant to the current approach
+
+% Use $S$ to represent a matrix whose columns define the vertices of a polytope enclosing the region of integration.
+% \begin{align*}
+%  \int_S \N{f}{m}{C}\ud f 
+% & = \int_{V^{-1}S} \N{f}{V^{-1}m}{E}\ud f 
+% \end{align*}
+
+
+
+
+\bibliography{bub}
 \end{document}
