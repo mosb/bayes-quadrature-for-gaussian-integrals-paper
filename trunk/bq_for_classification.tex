@@ -1,5 +1,5 @@
 \documentclass[twoside]{article}
-\usepackage[accepted]{aistats2012}
+\usepackage{aistats2e}
 
 % For figures
 %\usepackage{graphicx} % more modern
@@ -26,17 +26,15 @@
 
 \aistatstitle{Bayesian Quadrature for Gaussian Process Classification}
 
-\aistatsauthor{ Michael A. Osborne \And Roman   Garnett}
+\aistatsauthor{ 
+%Michael A. Osborne \And Roman   Garnett
+}
 \aistatsaddress{ 
-Department of Engineering Science \\
-University of Oxford \\
-Oxford OX1 3PJ, UK\\
-\url{mosb@robots.ox.ac.uk} 
+% Department of Engineering Science \\
+% University of Oxford \\
+% Oxford OX1 3PJ, UK\\
+% \url{mosb@robots.ox.ac.uk} 
 \And 
-Robotics Institute\\
-Carnegie Mellon University\\
-Pittsburgh PA 15213, USA\\
-\url{rgarnett@cs.cmu.edu} 
 }
 ]
 
@@ -57,9 +55,8 @@ Estimating multivariate Gaussian cumulative distribution functions is a problem 
 \section{Gaussian Processes}
 Since our \acro{bq} approach makes extensive use of Gaussian processes (\gp) \cite{GPsBook}, in this section we provide a brief introduction to \gp s and to our notation. A \gpb is defined as a distribution over the functions $f: \mathcal{X} \rightarrow \mathbb{R}$ such that the distribution over the possible function values on any finite subset of $\mathcal{X}$ is multivariate Gaussian. For clarity, we henceforth assume $\mathcal{X} = \mathbb{R}$, although all results generalise to $\mathbb{R}^n$. For a function $f$, the prior distribution over its vector of values $\vf$ on $\vlfv \subset \mathcal{X}$ is
 \begin{align}%\label{eq:\gpbDefn}
-\textstyle
- \po{\vf}\deq \N{\vf}{\vmu}{K}
- \deq\frac{1}{\sqrt{\det({2\pi K})}}\,\exp \big(-\frac{1}{2}\,(\vf-\vmu)\tra\,K\inv\,(\vf-\vmu)\big).
+&\po{\vf}  \deq \N{\vf}{\vmu}{K}\nonumber\\
+&\!\deq\frac{1}{\sqrt{\det({2\pi K})}}\exp \big(-\frac{1}{2}(\vf-\vmu)\tra K\inv(\vf-\vmu)\big).
 \end{align}
 This distribution is specified by mean and covariance functions, which give the mean vector $\vmu$ and covariance matrix $K$ respectively. 
 We choose Gaussian (squared exponential) covariance functions,
@@ -79,23 +76,25 @@ Given observations $(\vlfv_s,\vf_s)$, we are interested in making predictions ab
 \end{equation}
 where the mean $m$, covariance $C$, and variance $V$ are
 \begin{align} 
-\textstyle
-\meancond{f}{\lfv_\star}{s}
-& \deq \mean{f_\star}{\vf_s}
-= \mu(\lfv_\star)+
+& \meancond{f}{\lfv_\star}{s}
+ \deq \mean{f_\star}{\vf_s} 
+\nonumber\\
+& = \mu(\lfv_\star)+
 K(\lfv_\star,\vlfv_s)
 K(\vlfv_s,\vlfv_s)\inv
-\bigl(\vf_s-{\mu}(\vlfv_s)\bigr)\label{eq:GPMean}
+\bigl(\vf_s-{\mu}(\vlfv_s)\bigr)
+\label{eq:GPMean}
 \\[0.2cm]
-C_{f|s}(\lfv_\star, \lfv'_\star)
-& \deq C(f_\star,f'_\star|\vf_s) 
-=K(\lfv_\star,\lfv'_\star) - 
+& C_{f|s}(\lfv_\star, \lfv'_\star)
+ \deq C(f_\star,f'_\star|\vf_s) 
+\nonumber\\
+& =K(\lfv_\star,\lfv'_\star) - 
 K(\lfv_\star,\vlfv_s)
 K(\vlfv_s,\vlfv_s)\inv
 K(\vlfv_s,\lfv'_\star)%\label{eq:\gpbCov}
 \\[0.2cm]
-\covcond{f}{\lfv_\star}{s}
-&\deq {\cov{f_\star}{\vf_s}} 
+& \covcond{f}{\lfv_\star}{s}
+\deq {\cov{f_\star}{\vf_s}} 
 = C_{f|s}(\lfv_\star, \lfv_\star).
 \end{align} 
 Note that the above assumes implicit conditioning on hyperparameters. Where required for disambiguation, we'll make this explicit, as per $m_{f|s,w}(x\st) \deq \mean{f\st}{\vf_s, w}$ and so forth.
@@ -129,7 +128,7 @@ For classification, we adopt the step function likelihood
 1, & f_d>0\\
 0, & f_d\leq 0\,.
 \end{cases}
-\intertext{More generally, we consider the rectangular likelihood to allow censored regression}
+\intertext{Note that the step function likelihood with Gaussian noise in the discriminant, $f$, is equivalent to the probit likelihood with a noiseless discriminant. More generally, we consider the rectangular likelihood to allow censored regression}
  \p{y_d=1}{f_d} & \deq
 \begin{cases}
 1, & l_d\leq f_d<u_d\\
@@ -161,7 +160,7 @@ Quadrature involves evaluating $f(\lfv)$ at a vector of sample points $\vlfv_s$,
 %effectively ignores the information content of $\vlfv_s$, leading to unsatisfactory behaviour.
 %\footnote{  For example, imagine that we had $\card{s}=3$, and $\lfv_1 = \lfv_2$. In this case, the identical value $q(\lfv_1)= q(\lfv_2)$ will receive $\nicefrac{2}{3}$ of the weight, whereas the equally useful $q(\lfv_3)$ will receive only $\nicefrac{1}{3}$. \textcolor{red}{I'm not crazy about this argument, since the weightings are also incorporating information about the prior...} }
 
-Previous work on Bayesian quadrature chooses a \gpb prior for $f$, with mean $\mu_f$ and the Gaussian covariance \eqref{eq:Gaussian_cov_fn}. Here the scales $h$ and $w$ are hyperparameters that specify the  \gpb used for Bayesian quadrature. These scales are typically fitted using type two maximum likelihood (\acro{mlii}); we will later introduce an approximate means of marginalising them in Section \ref{sec:marginalising}.
+Previous work on Bayesian quadrature chooses a \gpb prior for $f$, with mean $\mu_f$ and the Gaussian covariance \eqref{eq:Gaussian_cov_fn}. Here the scales $h$ and $w$ are hyperparameters that specify the  \gpb used for Bayesian quadrature. These scales are typically fitted using type two maximum likelihood (\acro{mlii}).
 
 % Many more of these will be implicitly introduced in the coming sections; we'll take this as given and incorporate them into the (hidden) context $I$. 
 % Note that it will later become apparent that our inference for $\inty{f}$ is independent of the $h$ quadrature hyperparameter.
@@ -169,12 +168,16 @@ Previous work on Bayesian quadrature chooses a \gpb prior for $f$, with mean $\m
 Variables possessing a multivariate Gaussian distribution are jointly Gaussian distributed with any affine transformations of those variables. Because integration is affine, we can hence use computed samples $\vf_s$ to perform analytic Gaussian process inference about the value of integrals over $f(\lfv)$, such as $\inty{f}$. The mean estimate for $\inty{f}$ given $\vf_s$ is
 %
 \begin{align} \label{eq:mean_dnty_f}
-\mean{\inty{f}}{\vf_s}
-& 
-=\iint \inty{f}\,\p{\inty{f}}{f}\p{f}{\vf_s} \ud \inty{f} \,\ud f                                                                                                                                                               \nonumber\\
+&
+\mean{\inty{f}}{\vf_s} 
+\nonumber\\
+& =\iint \inty{f}\,\p{\inty{f}}{f}\p{f}{\vf_s} \ud \inty{f} \,\ud f                                                                                                                                                               \nonumber\\
 &
  =\iint \inty{f}\,\dd{\inty{f}}{\int f(\lfv)\,\po{\lfv}\,\ud\lfv}
-\N{f}{\meancondfn{f}{s}}{C_{f|s}} \ud \inty{f} \,\ud f \nonumber\\
+\nonumber\\
+& \hspace{4cm}
+\N{f}{\meancondfn{f}{s}}{C_{f|s}} \ud \inty{f} \,\ud f 
+\nonumber\\
 &
  = \int \meancondfn{f}{s}(\lfv)\,\po{\lfv}\,\ud\lfv
 \,,
@@ -199,7 +202,8 @@ Bayesian quadrature (\sc{bq}) approaches this problem by assigning a \gpb prior 
 \begin{equation}
  \psi(\vf) \deq \N{\vf}{\vmu}{\Sigma}\,.
 \end{equation}
-In order to employ \sc{bq}, we must assume an improper input distribution $p(\vf) = 1$. This introduces some difficulties. In particular, if we take a stationary covariance for $\psi$, as is typically assumed by \sc{bq}, the predictive variance for $\Psi\st$ is always infinite. This can be explained by noting that, given finite observations of $\psi$, there will always be an infinite amount of potentially unexplored mass of the integrand times the prior. This infinite variance is not reflective of our true state of knowledge, however. We know that the light tails of the Gaussian cause $\psi$ to be arbitrarily small sufficiently far from $\vm$, bounding how much mass can have been missed. We can express this knowledge by using a more appropriate covariance. Note that if we have a Gaussian prior $\N{a}{\alpha}{\beta^2}$ for $a$, the prior for its product $c = a b$ with known $b$ is $\N{c}{b \alpha}{b \beta^2 b}$. In our case, we model $\psi$ as being the product of an unknown function, possessing a squared exponential covariance, and an isotropic Gaussian $\N{f}{\vmu}{\Lambda}$. Here $\Lambda = \lambda^2 I$, where $I$ is the identity matrix, and $\lambda$ is the largest eigenvalue of $C$. This Gaussian represents a bounding envelope for $\psi$; we expect $\psi$ to drop to zero at least as quickly as it. Hence we arrive at the covariance for $\psi$
+In order to employ \sc{bq}, we must assume an improper input distribution $p(\vf) = 1$. This introduces some difficulties. In particular, if we take a stationary covariance for $\psi$, as is typically assumed by \sc{bq}, the predictive variance for $\Psi\st$ is always infinite. This can be explained by noting that, given finite observations of $\psi$, there will always be an infinite amount of potentially unexplored mass of the integrand times the prior. This infinite variance is not reflective of our true state of knowledge, however. We know that the light tails of the Gaussian cause $\psi$ to be arbitrarily small sufficiently far from $\vm$, bounding how much mass can have been missed. We can express this knowledge by using a more appropriate covariance. Note that if we have a Gaussian prior $\N{a}{\alpha}{\beta^2}$ for $a$, the prior for its product $c = a b$ with known $b$ is $\N{c}{b \alpha}{b \beta^2 b}$. In our case, we model $\psi$ as being the product of an unknown function, possessing a squared 
+exponential covariance, and an isotropic Gaussian $\N{f}{\vmu}{\Lambda}$. Here $\Lambda = \lambda^2 I$, where $I$ is the identity matrix, and $\lambda$ is the largest eigenvalue of $C$. This Gaussian represents a bounding envelope for $\psi$; we expect $\psi$ to drop to zero at least as quickly as it. Hence we arrive at the covariance for $\psi$
 \begin{align}
  & \text{cov}\bigl(\psi(\vf), \psi(\vf')\bigr) \deq K(\vf, \vf')\nonumber\\ & = \N{\vf}{\vmu}{\Lambda} \N{\vf}{\vf'}{D} \N{\vf'}{\vmu}{\Lambda}\,.
 \end{align}
@@ -210,7 +214,7 @@ An alternative is the class of `slice' observations
 \begin{equation}
  \int_{-\infty}^{\infty} \ldots \int_{l_d}^{u_d} \ldots \int_{-\infty}^{\infty} \psi(\vf) \ud f_D \ldots \ud f_d\ldots \ud f_1,
 \end{equation}
-which is expressible using standard error functions. Just as for sample evaluations, however, such observations are not very informative in high dimension. The problem for both types of observation is that, for increasingly high $D$, they are informative of only an increasingly tiny quantity of the domain over which $\psi$ must be integrated. What is needed is an observation of another integral over the whole of $\vf$.
+which are expressible using standard error functions. Just as for sample evaluations, however, such observations are not very informative in high dimension. The problem for both types of observation is that, for increasingly high $D$, they are informative of only an increasingly tiny quantity of the domain over which $\psi$ must be integrated. What is needed is an observation of another integral over the whole of $\vf$.
 
 Such an integral that is expressible in closed form is the Gaussian convolution
  \begin{equation}\label{eq:conv}
