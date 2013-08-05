@@ -23,6 +23,11 @@
 \usepackage{booktabs}
 \usepackage{relsize}
 \usepackage{nicefrac}
+\usepackage[h]{esvect}
+\usepackage{xspace} 
+\usepackage{tikz,pgfplots}
+\usetikzlibrary{arrows,shapes,plotmarks}
+
 
 %\usepackage{subfig}
 %\usepackage{pst-all} % PSTricks
@@ -54,7 +59,21 @@
 
 \newcommand{\acro}[1]{\textsc{#1}}
 % The 'F', as in 'pF', is for 'Full'
-\newcommand{\vect}[1]{\boldsymbol{#1}}
+
+\newcommand{\vm}{\vect{m}}
+%\newcommand{\vl}{\vect{l}}
+\newcommand{\vu}{\vect{u}}
+\newcommand{\vinf}{\vect{\infty}}
+\renewcommand{\sc}[1]{{\scshape #1}}
+\newcommand{\vfd}{\vect{f}}
+\newcommand{\gp}{\textsc{gp}\xspace}
+\newcommand{\bq}{\textsc{bq}\xspace}
+
+\newcommand{\reals}{\mathbb{R}}
+
+\newcommand{\vect}[1]{\underline{\smash{#1}}}
+\renewcommand{\v}[1]{\vect{#1}}
+%\newcommand{\vect}[1]{\boldsymbol{#1}}
 % for lines that need to be skinny -- rg
 \newcommand{\mat}[1]{\mathbf{#1}}
 \newcommand{\pderiv}[2]{\frac{\partial #1}{\partial #2}}
@@ -66,20 +85,20 @@
 \newcommand{\argmax}{\operatornamewithlimits{argmax}}
 \newcommand{\ud}{\mathrm{d}}
 % The following designed for probabilities with long arguments
-\newcommand{\Prob}[2]{P\!\left(\,#1\;\middle\vert\;#2\,\right)}
-\newcommand{\ProbF}[3]{P\!\left(\,#1\!=\!#2\;\middle\vert\;#3\,\right)}
-\newcommand{\p}[2]{p\!\left(#1\middle\vert#2\right)}
-\newcommand{\po}[1]{p\!\left(#1\right)}
-\newcommand{\pF}[3]{p\!\left(\,#1\!=\!#2\;\middle\vert\;#3\,\right)} 
-\newcommand{\mean}[2]{{m}\!\left(#1\middle\vert#2\right)}
-\newcommand{\novmean}[2]{{m}\!\left(#1\middle\vert#2\right)}
-\newcommand{\novcov}[2]{\var\!\left(#1\middle\vert#2\right)}
-\newcommand{\cov}[2]{\var\!\left(#1\middle\vert#2\right)} 
-\newcommand{\pskinny}[2]{p\!\left(#1\;\middle\vert\;#2\right)}
-\newcommand{\meanskinny}[2]{{m}\!\left(#1\middle\vert#2\right)}
-\newcommand{\covskinny}[2]{\var\!\left(#1\middle\vert#2\right)} 
+\newcommand{\Prob}[2]{P(\,#1\\mid\;#2\,)}
+\newcommand{\ProbF}[3]{P(\,#1=#2\\mid\;#3\,)}
+\newcommand{\p}[2]{p(#1\mid#2)}
+\newcommand{\po}[1]{p (#1)}
+\newcommand{\pF}[3]{p(\,#1=#2\\mid\;#3\,)} 
+\newcommand{\mean}[2]{{m}(#1\mid#2)}
+\newcommand{\novmean}[2]{{m}(#1\mid#2)}
+\newcommand{\novcov}[2]{\var(#1\mid#2)}
+\newcommand{\cov}[2]{\var(#1\mid#2)} 
+\newcommand{\pskinny}[2]{p(#1\\mid\;#2)}
+\newcommand{\meanskinny}[2]{{m}(#1\mid#2)}
+\newcommand{\covskinny}[2]{\var(#1\mid#2)} 
 
-\newcommand{\secm}[2]{{S}\!\left(#1\!\;\middle\vert\;\!#2\right)} 
+\newcommand{\secm}[2]{{S}(#1\mid#2)} 
 
 \newcommand{\novmeancond}[3]{m^{#1}_{#2|#3}}
 \newcommand{\novcovcond}[3]{\var^{#1}_{#2|#3}}
@@ -90,7 +109,7 @@
 \newcommand{\meancondfn}[2]{{m}_{#1|#2}}
 \newcommand{\covcondfn}[2]{\var_{#1|#2}}
 
-%\newcommand{\inty}[1]{\textstyle{\int}\!#1}
+%\newcommand{\inty}[1]{\textstyle{\int}#1}
 \newcommand{\inty}[1]{\langle #1 \rangle}
 %\newcommand{\rv}[1]{\mathring{#1}}
 \newcommand{\rv}[1]{{#1}}
@@ -177,11 +196,11 @@
 
 
 
-\newcommand{\N}[3]{\mathcal{N}\!\left(#1;#2,#3\right)}
+\newcommand{\N}[3]{\mathcal{N}(#1;#2,#3)}
 \newcommand{\bN}[3]{\mathcal{N}\big(#1;#2,#3\big)}
 \newcommand{\boldN}[3]{\text{\textbf{\mathcal{N}}}\big(#1;#2,#3\big)}
-\newcommand{\Ph}[3]{\Phi\!\left(#1;#2,#3\right)}
-\newcommand{\dd}[2]{\delta\!\left(#1-#2\right)}
+\newcommand{\Ph}[3]{\Phi(#1;#2,#3)}
+\newcommand{\dd}[2]{\delta(#1-#2)}
 \newcommand{\ones}[1]{\mat{1}_{#1}}
 \newcommand{\eye}[1]{\mat{E}_{#1}}
 \newcommand{\tra}{^\ensuremath{\mathsf{T}}}
@@ -189,22 +208,19 @@
 \newcommand{\deq}{:=}
 \newcommand{\degree}{^\circ}
 
-\providecommand{\norm}[1]{\left\lvert#1\right\rvert}
-\providecommand{\normw}[1]{\left\lVert#1\right\rVert_w}
-\providecommand{\card}[1]{\left\lvert#1\right\rvert}
+\providecommand{\norm}[1]{\lvert#1\rvert}
+\providecommand{\normw}[1]{\lVert#1\rVert_w}
+\providecommand{\card}[1]{\lvert#1\rvert}
 
 \DeclareMathOperator{\chol}{chol}
 \DeclareMathOperator{\diag}{diag}
 % \
-\newcommand{\de}{\epsilon_{rr}}
-\newcommand{\gpb}{{{\acro{gp}}} }
-\newcommand{\gp}{{{\acro{gp}}}}
 
 \newenvironment{narrow}[2]{%
   \begin{list}{}{%
   \setlength{\topsep}{0pt}%
-  \setlength{\leftmargin}{#1}%
-  \setlength{\rightmargin}{#2}%
+  \setlength{margin}{#1}%
+  \setlength{margin}{#2}%
   \setlength{\listparindent}{\parindent}%
   \setlength{\itemindent}{\parindent}%
   \setlength{\parsep}{\parskip}}%
