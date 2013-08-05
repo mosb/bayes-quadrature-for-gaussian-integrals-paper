@@ -6,11 +6,9 @@
 %\usepackage{epsfig} % less modern
 \usepackage{preamble}
 \usepackage{natbib}
-\newcommand{\vm}{\vect{m}}
-%\newcommand{\vl}{\vect{l}}
-\newcommand{\vu}{\vect{u}}
-\newcommand{\vinf}{\vect{\infty}}
-\renewcommand{\sc}[1]{{\scshape #1}}
+
+
+
 
 \usepackage{usbib}
 \bibliographystyle{myusmeg-a}
@@ -52,53 +50,6 @@ Estimating multivariate Gaussian cumulative distribution functions is a problem 
 \item ignore correlations between numerator and denominator integrals
 \end{itemize}
 
-\section{Gaussian Processes}
-Since our \acro{bq} approach makes extensive use of Gaussian processes (\gp) \cite{GPsBook}, in this section we provide a brief introduction to \gp s and to our notation. A \gpb is defined as a distribution over the functions $f: \mathcal{X} \rightarrow \mathbb{R}$ such that the distribution over the possible function values on any finite subset of $\mathcal{X}$ is multivariate Gaussian. For clarity, we henceforth assume $\mathcal{X} = \mathbb{R}$, although all results generalise to $\mathbb{R}^n$. For a function $f$, the prior distribution over its vector of values $\vf$ on $\vlfv \subset \mathcal{X}$ is
-\begin{align}%\label{eq:\gpbDefn}
-&\po{\vf}  \deq \N{\vf}{\vmu}{K}\nonumber\\
-&\!\deq\frac{1}{\sqrt{\det({2\pi K})}}\exp \big(-\frac{1}{2}(\vf-\vmu)\tra K\inv(\vf-\vmu)\big).
-\end{align}
-This distribution is specified by mean and covariance functions, which give the mean vector $\vmu$ and covariance matrix $K$ respectively. 
-We choose Gaussian (squared exponential) covariance functions,
-\begin{align} \label{eq:Gaussian_cov_fn}
-% K(\vlfv,\vlfv') & \deq \prod_{e=1}^{E} K_e\big(\phi\pha_e,\phi_e'\big)\\
-\textstyle
-K(\lfv_1,\lfv_2)& \deq h^2\,\N{\lfv_1}{\lfv_2}{w}.
-\end{align} 
-Here $h$ specifies the output scale over $f$, while $w$ defines a (squared) input scale over $\lfv$. 
-% Note that if $x$ has dimension greater than one, $w$ is a covariance matrix; we'll assume $w$ is diagonal. 
-Given observations $(\vlfv_s,\vf_s)$, we are interested in making predictions about  $f_\star$ at input $\lfv_\star$. We will assume that function inputs such as $\vlfv_s$ and $\lfv_\star$ are always known; they will not be explicitly represented. With this information, we have the predictive equations
-\begin{equation}
- \pskinny{f\st}{\vf_s} = 
-\bN{f\st}
-{\meancond{f}{\vlfv_\star}{s}}
-{\covcond{f}{\vlfv_\star}{s}}\,,
-\end{equation}
-where the mean $m$, covariance $C$, and variance $V$ are
-\begin{align} 
-& \meancond{f}{\lfv_\star}{s}
- \deq \mean{f_\star}{\vf_s} 
-\nonumber\\
-& = \mu(\lfv_\star)+
-K(\lfv_\star,\vlfv_s)
-K(\vlfv_s,\vlfv_s)\inv
-\bigl(\vf_s-{\mu}(\vlfv_s)\bigr)
-\label{eq:GPMean}
-\\[0.2cm]
-& C_{f|s}(\lfv_\star, \lfv'_\star)
- \deq C(f_\star,f'_\star|\vf_s) 
-\nonumber\\
-& =K(\lfv_\star,\lfv'_\star) - 
-K(\lfv_\star,\vlfv_s)
-K(\vlfv_s,\vlfv_s)\inv
-K(\vlfv_s,\lfv'_\star)%\label{eq:\gpbCov}
-\\[0.2cm]
-& \covcond{f}{\lfv_\star}{s}
-\deq {\cov{f_\star}{\vf_s}} 
-= C_{f|s}(\lfv_\star, \lfv_\star).
-\end{align} 
-Note that the above assumes implicit conditioning on hyperparameters. Where required for disambiguation, we'll make this explicit, as per $m_{f|s,w}(x\st) \deq \mean{f\st}{\vf_s, w}$ and so forth.
-
 \section{Gaussian process classification}
 
 We motivate the relevance of Gaussian integrals to GP classification.
@@ -116,7 +67,7 @@ We assume hyperparameters are known.
 {\int\p{\vy}{\vf}p(\vf)\ud\vf}\,.
 \end{align}
 \begin{equation}
-\p{\vy}{\vf} \deq \prod_{i=1}^{D}\p{y_d}{f_d}
+\p{\vy}{\vf} \deq \prod_{d=1}^{D}\p{y_d}{f_d}
 \end{equation}
 
 
@@ -139,86 +90,73 @@ we work with the latter henceforth.
 
 \section{Bayesian Quadrature} \label{sec:bq}
 
-% Note that maximum likelihood is also subject to issues. $\p{D}{\lfv,I}$, how come (known) $I$ is on the right and (known) $D$ is on the left? 
+% Note that maximum likelihood is also subject to issues. $\p{D}{x,I}$, how come (known) $I$ is on the right and (known) $D$ is on the left? 
 
-\emph{Bayesian quadrature} \cite{BZHermiteQuadrature,BZMonteCarlo} is a means of performing Bayesian inference about the value of a potentially nonanalytic integral, $\inty{f} \deq \int f(x) p(x) \ud x$.
+\emph{Bayesian quadrature} \citep{BZHermiteQuadrature,BZMonteCarlo} is a means of performing Bayesian inference about the value of a potentially nonanalytic integral, $\inty{g} \deq \int g(\vx) p(\vx) \ud \vx$.
 %Note that we use a condensed notation; this and all integrals to follow are definite integrals over the entire domain of interest.
-We assume a Gaussian density
-$\po{\lfv} \deq \N{\lfv}{\nu_{\lfv}}{\lambda_{\lfv}}$,
-although other convenient forms, or, if necessary, the use of an importance re-weighting trick ($q(x) = \nicefrac{q(x)}{p(x)} p(x)$ for any $q(x)$), allow any other integral to be approximated. 
-% If $\lfv$ is a vector, $\nu_{\lfv}$ is a  vector of identical size, and $\lambda_{\lfv}$ an appropriate covariance matrix.
 
-%\textcolor{red}{[I'm hoping to re-write the next two paragraphs; it's way too indirect, and I think the philosophical foundations of \acro{mcmc} are a poor avenue of attack]}
-Quadrature involves evaluating $f(\lfv)$ at a vector of sample points $\vlfv_s$, giving $\vf\pha_s\deq f(\vlfv_s)$. Often this evaluation is computationally expensive; the consequent sparsity of samples introduces uncertainty about the function $f$ between them, and hence uncertainty about the integral $\inty{f}$.
+Quadrature involves evaluating $g(\vx)$ at a matrix of sample points $X$, giving $\v{g}\deq g(X)$. Often this evaluation is computationally expensive; the consequent sparsity of samples introduces uncertainty about the function $f$ between them, and hence uncertainty about the integral $\inty{g}$.
 
-%As ever in the face of uncertainty, we address the estimation of the value of our integral as a problem of Bayesian inference \cite{BZNumericalAnalysis}. 
+Most work on Bayesian quadrature chooses a \gp prior for $g$, with zero mean and the Gaussian covariance 
+\begin{align} \label{eq:Gaussian_cov_fn}
+K(\vx,\vx') & \deq \rho^2 \N{\vx}{\vx'}{\Omega}\,.
+\end{align} 
+This covariance, firstly, has hyperparameter $\rho$, 
+termed the output scale, or variance. The input covariance $\Omega$ is also parameterised by further hyperparameters: we'll  that specify the  \gp used for Bayesian quadrature. These scales are typically fitted using type two maximum likelihood (\acro{mlii}).
 
-%In considering any problem of inference, we need to be clear about both what information we have and which uncertain variables we are interested in. In our case, both the values $f(\vlfv_s)$ and their locations $\vlfv_s$ represent valuable pieces of knowledge. As discussed by \cite{MCUnsound}, traditional Monte Carlo, which approximates as
-%\begin{equation} \label{eq:MC_dntegral_estimate}
-%\inty{f} \simeq \frac{1}{\card{s}} \sum_{i=1}^{\card{s}} f(\lfv_d)\,,
-%\end{equation}
-%effectively ignores the information content of $\vlfv_s$, leading to unsatisfactory behaviour.
-%\footnote{  For example, imagine that we had $\card{s}=3$, and $\lfv_1 = \lfv_2$. In this case, the identical value $q(\lfv_1)= q(\lfv_2)$ will receive $\nicefrac{2}{3}$ of the weight, whereas the equally useful $q(\lfv_3)$ will receive only $\nicefrac{1}{3}$. \textcolor{red}{I'm not crazy about this argument, since the weightings are also incorporating information about the prior...} }
-
-Previous work on Bayesian quadrature chooses a \gpb prior for $f$, with mean $\mu_f$ and the Gaussian covariance \eqref{eq:Gaussian_cov_fn}. Here the scales $h$ and $w$ are hyperparameters that specify the  \gpb used for Bayesian quadrature. These scales are typically fitted using type two maximum likelihood (\acro{mlii}).
-
-% Many more of these will be implicitly introduced in the coming sections; we'll take this as given and incorporate them into the (hidden) context $I$. 
-% Note that it will later become apparent that our inference for $\inty{f}$ is independent of the $h$ quadrature hyperparameter.
-
-Variables possessing a multivariate Gaussian distribution are jointly Gaussian distributed with any affine transformations of those variables. Because integration is affine, we can hence use computed samples $\vf_s$ to perform analytic Gaussian process inference about the value of integrals over $f(\lfv)$, such as $\inty{f}$. The mean estimate for $\inty{f}$ given $\vf_s$ is
+Variables possessing a multivariate Gaussian distribution are jointly Gaussian distributed with any affine transformations of those variables. Because integration is affine, we can hence use computed samples $\vfd$ to perform analytic Gaussian process inference about the value of integrals over $f(x)$, such as $\inty{g}$. The mean estimate for $\inty{g}$ given $\vfd$ is
 %
-\begin{align} \label{eq:mean_dnty_f}
+\begin{align} 
 &
-\mean{\inty{f}}{\vf_s} 
+\mean{\inty{g}}{\v{g}} 
 \nonumber\\
-& =\iint \inty{f}\,\p{\inty{f}}{f}\p{f}{\vf_s} \ud \inty{f} \,\ud f                                                                                                                                                               \nonumber\\
+& =\iint \inty{g}\,\p{\inty{g}}{f}\p{g}{\v{g}} \ud \inty{g} \,\ud d                                                                                                                                                               \nonumber\\
 &
- =\iint \inty{f}\,\dd{\inty{f}}{\int f(\lfv)\,\po{\lfv}\,\ud\lfv}
+ =\iint \inty{g}\,\delta\bigl(\inty{g} - {\textstyle\int g(\vx)\,p(\vx)\,\ud x}\bigr)
 \nonumber\\
 & \hspace{4cm}
-\N{f}{\meancondfn{f}{s}}{C_{f|s}} \ud \inty{f} \,\ud f 
+\N{g}{m_{g|X}}{C_{g|X}} \ud \inty{g} \,\ud g 
 \nonumber\\
 &
- = \int \meancondfn{f}{s}(\lfv)\,\po{\lfv}\,\ud\lfv
-\,,
+ = \int m_{g|X}(\vx)~p(\vx)~\ud \vx
+\,. \label{eq:mean_dnty_f}
 \end{align}
-which is expressible in closed-form due to standard Gaussian identities \cite{BZMonteCarlo}.
-%Note that the form of our `best estimate' for $\inty{f}$, \eqref{eq:mean_dnty_f}, is an affine combination of the samples $\vf_s$, just as for traditional quadrature or Monte Carlo techniques. 
-% Indeed, if $\mu_f$ is taken as the mean of $\vf_s$ (as is usual for \gpb inference), the second term in \eqref{eq:mean_dnty_f} can be viewed as a correction factor to the Monte Carlo estimate \eqref{eq:MC_dntegral_estimate}. \textcolor{red}{[Since we're using a different sampling strategy than \acro{mcmc} in this paper, I think the preceeding statement is kind of misleading / confusing...]}
-% \sout{Note also that $h$ represents a simple multiplicative factor to both $\ntT{s}{f}$ and $K_{f}\bigl(\vlfv_s,\vlfv_s\bigr)$, and as such cancels out of \eqref{eq:mean_dnty_f}.} 
+Here we've used the following dense notation for the standard \gp expressions for the posterior mean $m$ and covariance $C$ respectively: 
+$m_{g|X}(\vx) \deq K(\vx, X) K(X, X)^{-1} \v{g} $ and 
+$C_{g|X}(\vx, \vx') \deq K(\vx, \vx') - K(\vx, X) K(X, X)^{-1} K(X, \vx')$.
+If the input density, $p(\vx)$, is Gaussian, \eqref{eq:mean_dnty_f} is expressible in closed-form using standard Gaussian identities \citep{BZMonteCarlo}.
+The use of an importance re-weighting trick ($q(\vx) = \nicefrac{q(\vx)}{p(\vx)} p(\vx)$ for any $q(\vx)$) allow any other integral to be approximated. 
 %
-The corresponding closed-form expression for the posterior variance of $\inty{f}$ lends itself as a natural convergence diagnostic. Similarly, we can compute the posteriors for integrals over the product of multiple, independent functions. For example, we can calculate the posterior mean 
-$\mean{\inty{f g}}{\vf_s, \vect{g}_s}$ for an integral $\int f(x) g(x) p(x) \ud x$. 
- In the following three sections, we will expand upon the improvements this paper introduces in the use of Bayesian Quadrature for computing model evidences.
+The corresponding closed-form expression for the posterior variance of $\inty{g}$ lends itself as a natural convergence diagnostic. 
 
 \section{Bayesian quadrature for Gaussian integrals}
 
 Consider the general Gaussian integral problem
 \begin{align}\label{eq:GI}
- \Psi\st & \deq \int_{\vl}^{\vu} \N{\vf}{\vmu}{\Sigma} \ud \vf\nonumber\\
+\inty{g} & \deq \int_{\vl}^{\vu} \N{\vf}{\vmu}{\Sigma} \ud \vf\nonumber\\
 & \deq \int_{l_1}^{u_1}\ldots\int_{l_D}^{u_D} \N{\vf}{\vmu}{\Sigma} \ud f_D \ldots \ud f_1\,.
 \end{align}
-Bayesian quadrature (\sc{bq}) approaches this problem by assigning a \gpb prior to the function
+Bayesian quadrature (\sc{bq}) approaches this problem by assigning a \gp prior to the function $g: \reals^D \to \reals$,
 \begin{equation}
- \psi(\vf) \deq \N{\vf}{\vmu}{\Sigma}\,.
+ g(\vf) \deq \N{\vf}{\vmu}{\Sigma}\,.
 \end{equation}
-In order to employ \sc{bq}, we must assume an improper input distribution $p(\vf) = 1$. This introduces some difficulties. In particular, if we take a stationary covariance for $\psi$, as is typically assumed by \sc{bq}, the predictive variance for $\Psi\st$ is always infinite. This can be explained by noting that, given finite observations of $\psi$, there will always be an infinite amount of potentially unexplored mass of the integrand times the prior. This infinite variance is not reflective of our true state of knowledge, however. We know that the light tails of the Gaussian cause $\psi$ to be arbitrarily small sufficiently far from $\vm$, bounding how much mass can have been missed. We can express this knowledge by using a more appropriate covariance. Note that if we have a Gaussian prior $\N{a}{\alpha}{\beta^2}$ for $a$, the prior for its product $c = a b$ with known $b$ is $\N{c}{b \alpha}{b \beta^2 b}$. In our case, we model $\psi$ as being the product of an unknown function, possessing a squared 
-exponential covariance, and an isotropic Gaussian $\N{f}{\vmu}{\Lambda}$. Here $\Lambda = \lambda^2 I$, where $I$ is the identity matrix, and $\lambda$ is the largest eigenvalue of $C$. This Gaussian represents a bounding envelope for $\psi$; we expect $\psi$ to drop to zero at least as quickly as it. Hence we arrive at the covariance for $\psi$
+In order to employ \sc{bq}, we must assume an improper input distribution $p(\vf) = 1$. This introduces some difficulties. In particular, if we take a stationary covariance for $g$, as is typically assumed by \sc{bq}, the predictive variance for $\Psi\st$ is always infinite. This can be explained by noting that, given finite observations of $g$, there will always be an infinite amount of potentially unexplored mass of the integrand times the prior. This infinite variance is not reflective of our true state of knowledge, however. We know that the light tails of the Gaussian cause $g$ to be arbitrarily small sufficiently far from $\vm$, bounding how much mass can have been missed. We can express this knowledge by using a more appropriate covariance. Note that if we have a Gaussian prior $\N{a}{\alpha}{\beta^2}$ for $a$, the prior for its product $c = a b$ with known $b$ is $\N{c}{b \alpha}{b \beta^2 b}$. In our case, we model $g$ as being the product of an unknown function, possessing a squared 
+exponential covariance, and an isotropic Gaussian $\N{f}{\vmu}{\Lambda}$. Here $\Lambda = \lambda^2 I$, where $I$ is the identity matrix, and $\lambda$ is the largest eigenvalue of $C$. This Gaussian represents a bounding envelope for $g$; we expect $g$ to drop to zero at least as quickly as it. Hence we arrive at the covariance for $g$
 \begin{align}
- & \text{cov}\bigl(\psi(\vf), \psi(\vf')\bigr) \deq K(\vf, \vf')\nonumber\\ & = \N{\vf}{\vmu}{\Lambda} \N{\vf}{\vf'}{D} \N{\vf'}{\vmu}{\Lambda}\,.
+ & \text{cov}\bigl(g(\vf), g(\vf')\bigr) \deq K(\vf, \vf')\nonumber\\ & = \N{\vf}{\vmu}{\Lambda}~\N{\vf}{\vf'}{\Omega}~\N{\vf'}{\vmu}{\Lambda}\,.
 \end{align}
 
-Another difference to traditional \sc{bq} is the nature of the observations available to us. As for standard \sc{bq}, we are, of course, able to evaluate $\psi(\vf)$ for any $\vf$. However, due to the curse of dimensionality, we are likely to require a very great number of such sample evaluations in order to perform accurate inference for $\Psi\st$ for high dimension $D$. Similar approaches built around Monte Carlo sampling (cite Genz) exist, but are similarly recognised as requiring a prohibitively large number of samples for high dimension. 
+Another difference to traditional \sc{bq} is the nature of the observations available to us. As for standard \sc{bq}, we are, of course, able to evaluate $g(\vf)$ for any $\vf$. However, due to the curse of dimensionality, we are likely to require a very great number of such sample evaluations in order to perform accurate inference for $\Psi\st$ for high dimension $D$. Similar approaches built around Monte Carlo sampling (cite Genz) exist, but are similarly recognised as requiring a prohibitively large number of samples for high dimension. 
 
 An alternative is the class of `slice' observations 
 \begin{equation}
- \int_{-\infty}^{\infty} \ldots \int_{l_d}^{u_d} \ldots \int_{-\infty}^{\infty} \psi(\vf) \ud f_D \ldots \ud f_d\ldots \ud f_1,
+ \int_{-\infty}^{\infty} \ldots \int_{l_d}^{u_d} \ldots \int_{-\infty}^{\infty} g(\vf) \ud f_D \ldots \ud f_d\ldots \ud f_1,
 \end{equation}
-which are expressible using standard error functions. Just as for sample evaluations, however, such observations are not very informative in high dimension. The problem for both types of observation is that, for increasingly high $D$, they are informative of only an increasingly tiny quantity of the domain over which $\psi$ must be integrated. What is needed is an observation of another integral over the whole of $\vf$.
+which are expressible using standard error functions. Just as for sample evaluations, however, such observations are not very informative in high dimension. The problem for both types of observation is that, for increasingly high $D$, they are informative of only an increasingly tiny quantity of the domain over which $g$ must be integrated. What is needed is an observation of another integral over the whole of $\vf$.
 
 Such an integral that is expressible in closed form is the Gaussian convolution
  \begin{equation}\label{eq:conv}
- \Psi_i = \int_{-\vinf}^{\vinf} \N{\vf}{\vm_i}{V_i} \psi(\vf) \ud \vf = \N{\vm_i}{\vmu}{V_i+\Sigma}.
+ \Psi_i = \int_{-\vinf}^{\vinf} \N{\vf}{\vm_i}{V_i} g(\vf) \ud \vf = \N{\vm_i}{\vmu}{V_i+\Sigma}.
 \end{equation}
  If the convolving Gaussian is `close' to the product of top hat functions required to reproduce \eqref{eq:GI}, then such convolutions may permit useful inference for $\Psi\st$. The covariance between $\Psi\st$ and the convolution $\Psi_i$ is
 \begin{align}\label{eq:Ksti}
