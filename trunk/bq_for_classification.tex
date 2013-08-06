@@ -54,6 +54,8 @@ Estimating multivariate Gaussian cumulative distribution functions is a problem 
 
 We motivate the relevance of Gaussian integrals to \gp classification.
 
+Note that we use a condensed notation; where limits for integrals are not supplied, they represent definite integrals over the entire domain. 
+
 We assume hyperparameters are known.
 \begin{align}
 \p{f\st}{\vy}
@@ -95,7 +97,7 @@ we work with the latter henceforth.
 \emph{Bayesian quadrature} \citep{BZHermiteQuadrature,BZMonteCarlo} is a means of performing Bayesian inference about the value of a potentially nonanalytic integral, \begin{equation}\label{eq:bq_integral}
 \inty{g} \deq \int g(\vx) p(\vx) \ud \vx
 \end{equation}
-%Note that we use a condensed notation; this and all integrals to follow are definite integrals over the entire domain of interest.
+
 
 Quadrature involves evaluating $g(\vx)$ at a matrix of sample points $X$, giving $\v{g}\deq g(X)$. Often this evaluation is computationally expensive; the consequent sparsity of samples introduces uncertainty about the function $f$ between them, and hence uncertainty about the integral $\inty{g}$.
 
@@ -126,7 +128,7 @@ Variables possessing a multivariate Gaussian distribution are jointly Gaussian d
 and, similarly, the variance is
 \begin{align} 
 V(\inty{g}\mid\v{g})
-=\iint C_{g|X}(\vx, \vx')~p(\vx)~p(\vx')~\ud \vx~\ud \vx'
+=\iint p(\vx)~C_{g|X}(\vx, \vx')~p(\vx')~\ud \vx~\ud \vx'
 \,. \label{eq:var_inty}
 \end{align}
 Here we've used the following dense notation for the standard \gp expressions for the posterior mean $m$ and covariance $C$ respectively:
@@ -150,31 +152,37 @@ In order to match \eqref{eq:GI} to \eqref{eq:bq_integral}, and hence to use \bq,
 \begin{equation}
  g(\vf) \deq \N{\vf}{\vmu}{\Sigma}\,
 \end{equation}
-and adopt the improper input distribution, $p(\vf) = 1$. We now assign a \gp prior 
-to the function $g: \reals^D \to \reals$, as in \bq. If we take a stationary covariance for $g$, as is typical, the predictive variance for $\inty{g}$ is always infinite. This can be explained by noting that, given finite observations of $g$, there will always be an infinite amount of potentially unexplored mass of the integrand times the prior. This infinite variance is not reflective of our true state of knowledge, however. We know that the light tails of the Gaussian cause $g$ to be arbitrarily small sufficiently far from $\vm$, bounding how much mass can have been missed. We can express this knowledge by using a more appropriate covariance. Note that if we have a Gaussian prior $\N{a}{\alpha}{\beta^2}$ for $a$, the prior for its product $c = a b$ with known $b$ is $\N{c}{b \alpha}{b \beta^2 b}$. In our case, we model $g$ as being the product of an unknown function, possessing a squared 
-exponential covariance, and an isotropic Gaussian $\N{f}{\vmu}{\Lambda}$. Here $\Lambda = \lambda^2 I$, where $I$ is the identity matrix, and $\lambda$ is the largest eigenvalue of $C$. This Gaussian represents a bounding envelope for $g$; we expect $g$ to drop to zero at least as quickly as it. Hence we arrive at the covariance for $g$
+and adopt the improper input distribution, $p(\vf) = 1$. 
+
+We now assign a \gp prior 
+to the function $g: \reals^D \to \reals$, as in traditional\bq. If we take a stationary covariance for $g$, as is typical, the predictive variance for $\inty{g}$ is infinite: the $\iint k(\vx,\vx')\,\ud\vx\,\ud \vx'$ term in \eqref{eq:var_inty} is unbounded, regardless of $X$. Intuitively, given finite observations of $g$, there will always be an infinite amount of potentially unexplored mass of the integrand, $g(\vx)p(\vx)$. This infinite variance is not reflective of our true state of knowledge, however. We know that the light tails of the Gaussian cause $g$ to be arbitrarily small sufficiently far from $\v{\mu}$, bounding how much mass can have been missed. We can express this knowledge by using a more appropriate covariance. Note that if we have a Gaussian prior $\N{a}{\alpha}{\beta^2}$ for an arbitrary variable $a$, the prior for its product $c = a b$ with known $b$ is $\N{c}{b \alpha}{b \beta^2 b}$. In our case, we model $g$ as being the product of an unknown function, possessing the Gaussian covariance \eqref{eq:Gaussian_cov_fn}, and an isotropic Gaussian $\N{f}{\vmu}{\Lambda}$. This Gaussian represents a bounding envelope for $g$; we expect it to drop to zero more slowly than $g$. This requirement implies that $\Lambda - \Sigma$ must be positive semi-definite; if we further require the tightest such bound, we must simply solve the semi-definite program
 \begin{align}
- & \text{cov}\bigl(g(\vf), g(\vf')\bigr) \deq k(\vf, \vf')\nonumber\\ & = \N{\vf}{\vmu}{\Lambda}~\N{\vf}{\vf'}{\Omega}~\N{\vf'}{\vmu}{\Lambda}\,.
+ \min_{\v{\lambda}\in\reals^D} & \sum_i \lambda_i\\
+\text{subject to } & \diag{\v{\lambda}} - \Sigma \succeq 0~.
+\end{align}
+Here we have defined $\Lambda = \diag \v{\lambda}$, which both simplifies the semi-definite program and allows tractable inference, as we'll see later. With this $\Lambda$, we arrive at the covariance for $g$
+\begin{align}
+ & \text{cov}\bigl(g(\vf), g(\vf')\bigr) = k(\vf, \vf')\nonumber\\ & \deq \rho^2~\N{\vf}{\vmu}{\Lambda}~\N{\vf}{\vf'}{\Omega}~\N{\vf'}{\vmu}{\Lambda}\,.
 \end{align}
 
-Another difference to traditional \sc{bq} is the nature of the observations available to us. As for standard \sc{bq}, we are, of course, able to evaluate $g(\vf)$ for any $\vf$. However, due to the curse of dimensionality, we are likely to require a very great number of such sample evaluations in order to perform accurate inference for $\inty{g}$ for high dimension $D$. Similar approaches built around Monte Carlo sampling (cite Genz) exist, but are similarly recognised as requiring a prohibitively large number of samples for high dimension. 
+Another difference to traditional \sc{bq} is the nature of the observations available to us. As for standard \sc{bq}, we can evaluate $g(\vf)$ for any $\vf$. However, due to the curse of dimensionality, we are likely to require a very great number of such sample evaluations in order to perform accurate inference for $\inty{g}$ in high dimension $D$. Similar approaches built around Monte Carlo sampling \citep{genz1992numerical} exist, but are similarly recognised as requiring a prohibitively large number of samples for high dimension. 
 
-An alternative is the class of `slice' observations 
+An alternative is the class of \emph{slice} observations 
 \begin{equation}
- \int_{-\infty}^{\infty} \ldots \int_{l_d}^{u_d} \ldots \int_{-\infty}^{\infty} g(\vf) \ud f_D \ldots \ud f_d\ldots \ud f_1,
+ \int \ldots \int \int_{l_d}^{u_d} \int \ldots \int g(\vf)~\ud f_D \ldots \ud f_d\ldots \ud f_1,
 \end{equation}
 which are expressible using standard error functions. Just as for sample evaluations, however, such observations are not very informative in high dimension. The problem for both types of observation is that, for increasingly high $D$, they are informative of only an increasingly tiny quantity of the domain over which $g$ must be integrated. What is needed is an observation of another integral over the whole of $\vf$.
 
-Such an integral that is expressible in closed form is the Gaussian convolution
+Such an integral that is expressible in closed form is convolution of Gaussians
  \begin{equation}\label{eq:conv}
- \Psi_i = \int_{-\vinf}^{\vinf} \N{\vf}{\vm_i}{V_i} g(\vf) \ud \vf = \N{\vm_i}{\vmu}{V_i+\Sigma}.
+ c_i = \int \N{\vf}{\vm_i}{V_i}~g(\vf)~\ud \vf = \N{\vm_i}{\vmu}{V_i+\Sigma}.
 \end{equation}
- If the convolving Gaussian is `close' to the product of top hat functions required to reproduce \eqref{eq:GI}, then such convolutions may permit useful inference for $\inty{g}$. The covariance between $\inty{g}$ and the convolution $\Psi_i$ is
+ If the convolving Gaussian is `close' to the product of top hat functions required to reproduce \eqref{eq:GI}, then such convolutions may permit useful inference for $\inty{g}$. The covariance between $\inty{g}$ and the convolution $c_i$ is
 \begin{align}\label{eq:Ksti}
-\text{cov}\bigl(\inty{g}, \Psi_i\bigr) =
-\int_{\vl}^{\vu} \int_{-\vinf}^{\vinf}  k(\vf, \vf') \N{\vf'}{\vm_i}{V_i} \ud \vf' \ud \vf 
+\text{cov}\bigl(\inty{g}, c_i\bigr) =
+\int_{\vl}^{\vu} \int  k(\vf, \vf')~\N{\vf'}{\vm_i}{V_i}~\ud \vf' \ud \vf 
 \end{align}
-While we can compute $\Psi_i$ for arbitrary $V_i$, the computation of \eqref{eq:Ksti} requires that $V$ be diagonal. 
+While we can compute $c_i$ for arbitrary $V_i$, the computation of \eqref{eq:Ksti} requires that $V$ be diagonal. 
 
 
 % the below is not relevant to the current approach
