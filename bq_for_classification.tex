@@ -22,7 +22,7 @@
 
 \twocolumn[
 
-\aistatstitle{Bayesian Quadrature for Gaussian Process Classification}
+\aistatstitle{Active learning of }
 
 \aistatsauthor{ 
 %Michael A. Osborne \And Roman   Garnett
@@ -45,16 +45,28 @@ Estimating multivariate Gaussian cumulative distribution functions is a problem 
 
 \begin{itemize}
  \item error function is non-elementary, but efficient means for its computation exist. 
- \item PCA
- \item acknoeldge Mackay's humble gaussian objection to eigenvectors, but the latent function used for \gp classification is dimensionless (or else the logistic, for example, wouldn't work).
-\item ignore correlations between numerator and denominator integrals
+\item approximations for Gaussian process classification \citep{kuss2005assessing,nickisch2008approximations}
+\item Note that we use a condensed notation; where limits for integrals are not supplied, they represent definite integrals over the entire domain. 
+\begin{equation}
+ \int \cdot \ud \v{x} \deq \int \ldots \int \ud x_D \ldots \ud x_1
+\end{equation}
+\item gaussian integrals \citep{cunningham2011approximate}
+\item similar work in VB \citep{gershman2012nonparametric} (using a Gaussian mixture, similar to a GP with Gaussian covariance, uses observations of $\int q(\vx) \log g(\vx) \ud\vx$.
 \end{itemize}
+
+
+
 
 \section{Gaussian process classification}
 
+\begin{figure}
+\caption{Gaussian process classification}
+\end{figure}
+
+
 We motivate the relevance of Gaussian integrals to \gp classification.
 
-Note that we use a condensed notation; where limits for integrals are not supplied, they represent definite integrals over the entire domain. 
+
 
 We assume hyperparameters are known.
 \begin{align}
@@ -108,13 +120,13 @@ k(\vx,\vx') & \deq \rho^2 \N{\vx}{\vx'}{\Omega}\,.
 This covariance, firstly, has hyperparameter $\rho$, 
 termed the output scale. The input covariance $\Omega$ is also parameterised by further hyperparameters: in this, as in previous work, we'll take $\Omega$ as diagonal, with its diagonal elements defined by input, or length, scale hyperparameters.  These hyperparameters are typically fitted using type two maximum likelihood.
 
-Variables possessing a multivariate Gaussian distribution are jointly Gaussian distributed with any affine transformations of those variables. Because integration is affine, we can hence use computed samples $\vfd$ to perform analytic Gaussian process inference about the value of integrals over $f(x)$, such as $\inty{g}$. The mean estimate for $\inty{g}$ given $\vfd$ is
+Variables possessing a multivariate Gaussian distribution are jointly Gaussian distributed with any affine transformations of those variables. Because integration is affine, we can hence use computed samples $\v{g}$ to perform analytic Gaussian process inference about the value of integrals over $g(x)$, such as $\inty{g}$. The mean estimate for $\inty{g}$ given $\v{g}$ is
 %
 \begin{align} 
 &
 \mean{\inty{g}}{\v{g}} 
 \nonumber\\
-& =\iint \inty{g}\,\p{\inty{g}}{f}\p{g}{\v{g}} \ud \inty{g} \,\ud d                                                                                                                                                               \nonumber\\
+& =\iint \inty{g}~\p{\inty{g}}{g}~\p{g}{\v{g}}~\ud \inty{g}~\ud g                                                                                                                                                               \nonumber\\
 &
  =\iint \inty{g}\,\delta\bigl(\inty{g} - {\textstyle\int g(\vx)\,p(\vx)\,\ud x}\bigr)
 \nonumber\\
@@ -143,6 +155,12 @@ The corresponding closed-form expression for the posterior variance of $\inty{g}
 
 \section{Bayesian quadrature for Gaussian integrals}
 
+\begin{figure}
+\psfragfig[crop=pdfcrop]{figures/observations}
+\caption{Gaussian integral}
+\end{figure}
+
+
 Consider the general Gaussian integral problem
 \begin{align}\label{eq:GI}
 \inty{g} & \deq \int_{\vl}^{\vu} \N{\vf}{\vmu}{\Sigma} \ud \vf\nonumber\\
@@ -155,7 +173,11 @@ In order to match \eqref{eq:GI} to \eqref{eq:bq_integral}, and hence to use \bq,
 and adopt the improper input distribution, $p(\vf) = 1$. 
 
 We now assign a \gp prior 
-to the function $g: \reals^D \to \reals$, as in traditional\bq. If we take a stationary covariance for $g$, as is typical, the predictive variance for $\inty{g}$ is infinite: the $\iint k(\vx,\vx')\,\ud\vx\,\ud \vx'$ term in \eqref{eq:var_inty} is unbounded, regardless of $X$. Intuitively, given finite observations of $g$, there will always be an infinite amount of potentially unexplored mass of the integrand, $g(\vx)p(\vx)$. This infinite variance is not reflective of our true state of knowledge, however. We know that the light tails of the Gaussian cause $g$ to be arbitrarily small sufficiently far from $\v{\mu}$, bounding how much mass can have been missed. We can express this knowledge by using a more appropriate covariance. Note that if we have a Gaussian prior $\N{a}{\alpha}{\beta^2}$ for an arbitrary variable $a$, the prior for its product $c = a b$ with known $b$ is $\N{c}{b \alpha}{b \beta^2 b}$. In our case, we model $g$ as being the product of an unknown function, possessing the Gaussian covariance \eqref{eq:Gaussian_cov_fn}, and an isotropic Gaussian $\N{f}{\vmu}{\Lambda}$. This Gaussian represents a bounding envelope for $g$; we expect it to drop to zero more slowly than $g$. This requirement implies that $\Lambda - \Sigma$ must be positive semi-definite; if we further require the tightest such bound, we must simply solve the semi-definite program
+to the function $g: \reals^D \to \reals$, as in traditional \bq,
+\begin{equation}
+ p(g) = \mathcal{GP}\bigl(g; 0 , k(\cdot,\cdot)\bigr).
+\end{equation}
+ If we take $k$ as a stationary covariance, as is typical, the predictive variance for $\inty{g}$ is infinite: the $\iint k(\vx,\vx')\,\ud\vx\,\ud \vx'$ term in \eqref{eq:var_inty} is unbounded, regardless of $X$. Intuitively, given finite observations of $g$, there will always be an infinite amount of potentially unexplored mass of the integrand, $g(\vx)p(\vx)$. This infinite variance is not reflective of our true state of knowledge, however. We know that the light tails of the Gaussian cause $g$ to be arbitrarily small sufficiently far from $\v{\mu}$, bounding how much mass can have been missed. We can express this knowledge by using a more appropriate covariance. Note that if we have a Gaussian prior $\N{a}{\alpha}{\beta^2}$ for an arbitrary variable $a$, the prior for its product $c = a b$ with known $b$ is $\N{c}{b \alpha}{b \beta^2 b}$. In our case, we model $g$ as being the product of an unknown function, possessing the Gaussian covariance \eqref{eq:Gaussian_cov_fn}, and an isotropic Gaussian $\N{f}{\vmu}{\Lambda}$. This Gaussian represents a bounding envelope for $g$; we expect it to drop to zero more slowly than $g$. This requirement implies that $\Lambda - \Sigma$ must be positive semi-definite; if we further require the tightest such bound, we must simply solve the semi-definite program
 \begin{align}
  \min_{\v{\lambda}\in\reals^D} & \sum_i \lambda_i\\
 \text{subject to } & \diag{\v{\lambda}} - \Sigma \succeq 0~.
@@ -165,15 +187,15 @@ Here we have defined $\Lambda = \diag \v{\lambda}$, which both simplifies the se
  & \text{cov}\bigl(g(\vf), g(\vf')\bigr) = k(\vf, \vf')\nonumber\\ & \deq \rho^2~\N{\vf}{\vmu}{\Lambda}~\N{\vf}{\vf'}{\Omega}~\N{\vf'}{\vmu}{\Lambda}\,.
 \end{align}
 
-Another difference to traditional \sc{bq} is the nature of the observations available to us. As for standard \sc{bq}, we can evaluate $g(\vf)$ for any $\vf$. However, due to the curse of dimensionality, we are likely to require a very great number of such sample evaluations in order to perform accurate inference for $\inty{g}$ in high dimension $D$. Similar approaches built around Monte Carlo sampling \citep{genz1992numerical} exist, but are similarly recognised as requiring a prohibitively large number of samples for high dimension. 
+Another difference to traditional \sc{bq} is the nature of the observations available to us. As for standard \sc{bq}, we can evaluate $g(\vf)$ for any $\vf$, a \emph{point observation}. However, due to the curse of dimensionality, we are likely to require a very great number of such point evaluations in order to perform accurate inference for $\inty{g}$ in high dimension $D$. Similar approaches built around Monte Carlo sampling \citep{genz1992numerical} exist, but are similarly recognised as requiring a prohibitively large number of samples for high dimension. 
 
-An alternative is the class of \emph{slice} observations 
+An alternative is the class of \emph{slice observations}
 \begin{equation}
  \int \ldots \int \int_{l_d}^{u_d} \int \ldots \int g(\vf)~\ud f_D \ldots \ud f_d\ldots \ud f_1,
 \end{equation}
 which are expressible using standard error functions. Just as for sample evaluations, however, such observations are not very informative in high dimension. The problem for both types of observation is that, for increasingly high $D$, they are informative of only an increasingly tiny quantity of the domain over which $g$ must be integrated. What is needed is an observation of another integral over the whole of $\vf$.
 
-Such an integral that is expressible in closed form is convolution of Gaussians
+Such an integral that is expressible in closed form is the Gaussian \emph{convolution observation}
  \begin{equation}\label{eq:conv}
  c_i = \int \N{\vf}{\vm_i}{V_i}~g(\vf)~\ud \vf = \N{\vm_i}{\vmu}{V_i+\Sigma}.
 \end{equation}
@@ -182,16 +204,12 @@ Such an integral that is expressible in closed form is convolution of Gaussians
 \text{cov}\bigl(\inty{g}, c_i\bigr) =
 \int_{\vl}^{\vu} \int  k(\vf, \vf')~\N{\vf'}{\vm_i}{V_i}~\ud \vf' \ud \vf 
 \end{align}
-While we can compute $c_i$ for arbitrary $V_i$, the computation of \eqref{eq:Ksti} requires that $V$ be diagonal. 
+While we can compute $c_i$ for arbitrary $V_i$, the computation of \eqref{eq:Ksti} places constraints on our model. In particular, tractability requires that $\Omega$, $\Lambda$ and $V_i$ are all diagonal, so that \eqref{eq:Ksti} becomes the product of $D$ independent two-dimensional integrals.
+
+We restrict ourselves to consideration of such convolution observations henceforth.
 
 
-% the below is not relevant to the current approach
-
-% Use $S$ to represent a matrix whose columns define the vertices of a polytope enclosing the region of integration.
-% \begin{align}
-%  \int_S \N{f}{m}{C}\ud f 
-% & = \int_{V^{-1}S} \N{f}{V^{-1}m}{E}\ud f 
-% \end{align}
+\section{Active Bayesian Quadrature for Gaussian Integrals}
 
 
 
