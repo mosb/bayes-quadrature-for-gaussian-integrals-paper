@@ -8,7 +8,8 @@
 \usepackage{amsmath,amssymb,amsfonts,textcomp}
 %\usepackage{bbold}
 %\usepackage[english]{babel}
-%\usepackage{graphicx}
+\usepackage{graphicx}
+%\usepackage{auto-pst-pdf}
 %\usepackage{verbatim}
 %\usepackage{amsthm}
 %\usepackage{hyperref}
@@ -19,7 +20,7 @@
 %\usepackage{appendix}
 \usepackage[english]{babel}
 \usepackage{color,psfrag}
-\usepackage{pstool}
+\usepackage[crop=pdfcrop]{pstool}
 \usepackage{booktabs}
 \usepackage{relsize}
 \usepackage{nicefrac}
@@ -28,6 +29,12 @@
 \usepackage{tikz,pgfplots}
 \usetikzlibrary{arrows,shapes,plotmarks}
 
+% \newcommand{\psff}[2][]{
+%   \begin{postscript}
+%     \input{#2.tex}
+%     \includegraphics[#1]{#2.eps}
+%   \end{postscript}
+% }
 
 %\usepackage{subfig}
 %\usepackage{pst-all} % PSTricks
