@@ -156,17 +156,17 @@ The corresponding closed-form expression for the posterior variance of $\inty{g}
 \section{Bayesian quadrature for Gaussian integrals}
 
 \begin{figure}
-\psfragfig[crop=pdfcrop]{figures/observations}
-\caption{Gaussian integral}
+\psfragfig{figures/observations}
+\caption{The integral of the Gaussian over the domain defined by the box represents a Gaussian integral. This quantity might be inferred given point observations of the Gaussian, but observations of other integrals, such as convolution with a Gaussian depicted by the plot of its .24 iso-probability contour, are usually more informative.}
+\label{fig:observations}
 \end{figure}
 
-
-Consider the general Gaussian integral problem
+Consider the general Gaussian integral problem 
 \begin{align}\label{eq:GI}
 \inty{g} & \deq \int_{\vl}^{\vu} \N{\vf}{\vmu}{\Sigma} \ud \vf\nonumber\\
 & \deq \int_{l_1}^{u_1}\ldots\int_{l_D}^{u_D} \N{\vf}{\vmu}{\Sigma} \ud f_D \ldots \ud f_1\,.
 \end{align}
-In order to match \eqref{eq:GI} to \eqref{eq:bq_integral}, and hence to use \bq, we firstly define 
+Figure \label{fig:observations} illustrates an example bivariate Gaussian integral. In order to match \eqref{eq:GI} to \eqref{eq:bq_integral}, and hence to use \bq, we firstly define 
 \begin{equation}
  g(\vf) \deq \N{\vf}{\vmu}{\Sigma}\,
 \end{equation}
@@ -177,15 +177,24 @@ to the function $g: \reals^D \to \reals$, as in traditional \bq,
 \begin{equation}
  p(g) = \mathcal{GP}\bigl(g; 0 , k(\cdot,\cdot)\bigr).
 \end{equation}
- If we take $k$ as a stationary covariance, as is typical, the predictive variance for $\inty{g}$ is infinite: the $\iint k(\vx,\vx')\,\ud\vx\,\ud \vx'$ term in \eqref{eq:var_inty} is unbounded, regardless of $X$. Intuitively, given finite observations of $g$, there will always be an infinite amount of potentially unexplored mass of the integrand, $g(\vx)p(\vx)$. This infinite variance is not reflective of our true state of knowledge, however. We know that the light tails of the Gaussian cause $g$ to be arbitrarily small sufficiently far from $\v{\mu}$, bounding how much mass can have been missed. We can express this knowledge by using a more appropriate covariance. Note that if we have a Gaussian prior $\N{a}{\alpha}{\beta^2}$ for an arbitrary variable $a$, the prior for its product $c = a b$ with known $b$ is $\N{c}{b \alpha}{b \beta^2 b}$. In our case, we model $g$ as being the product of an unknown function, possessing the Gaussian covariance \eqref{eq:Gaussian_cov_fn}, and an isotropic Gaussian $\N{f}{\vmu}{\Lambda}$. This Gaussian represents a bounding envelope for $g$; we expect it to drop to zero more slowly than $g$. This requirement implies that $\Lambda - \Sigma$ must be positive semi-definite; if we further require the tightest such bound, we must simply solve the semi-definite program
+ If we take $k$ as a stationary covariance, as is typical, the predictive variance for $\inty{g}$ is infinite: the $\iint k(\vx,\vx')\,\ud\vx\,\ud \vx'$ term in \eqref{eq:var_inty} is unbounded, regardless of $X$. Intuitively, given finite observations of $g$, there will always be an infinite amount of potentially unexplored mass of the integrand, $g(\vx)p(\vx)$. This infinite variance is not reflective of our true state of knowledge, however. We know that the light tails of the Gaussian cause $g$ to be arbitrarily small sufficiently far from $\v{\mu}$, bounding how much mass can have been missed. We can express this knowledge by using a more appropriate covariance. 
+
+Note that if we have a Gaussian prior $\N{a}{\alpha}{\beta^2}$ for an arbitrary variable $a$, the prior for its product $c = a b$ with known $b$ is $\N{c}{b \alpha}{b \beta^2 b}$. In our case, we model $g$ as being the product of an unknown function, possessing the Gaussian covariance \eqref{eq:Gaussian_cov_fn}, and an isotropic Gaussian $\N{f}{\vmu}{\Lambda}$. This Gaussian represents a bounding envelope for $g$; we expect it to drop to zero more slowly than $g$. This requirement implies that $\Lambda - \Sigma$ must be positive semi-definite; if we further require the tightest such bound, we must simply solve the semi-definite program
 \begin{align}
  \min_{\v{\lambda}\in\reals^D} & \sum_i \lambda_i\\
 \text{subject to } & \diag{\v{\lambda}} - \Sigma \succeq 0~.
 \end{align}
-Here we have defined $\Lambda = \diag \v{\lambda}$, which both simplifies the semi-definite program and allows tractable inference, as we'll see later. With this $\Lambda$, we arrive at the covariance for $g$
+Here we have defined $\Lambda = \diag \v{\lambda}$, which both simplifies the semi-definite program and allows tractable inference, as we'll see later. An example of a bounding Gaussian determined by semi-definite programming is contained in Figure \ref{fig:bounding_ellipse}. In conclusion, we arrive at the covariance for $g$
 \begin{align}
  & \text{cov}\bigl(g(\vf), g(\vf')\bigr) = k(\vf, \vf')\nonumber\\ & \deq \rho^2~\N{\vf}{\vmu}{\Lambda}~\N{\vf}{\vf'}{\Omega}~\N{\vf'}{\vmu}{\Lambda}\,.
 \end{align}
+
+\begin{figure}
+\psfragfig{figures/bounding_pdf}
+\psfragfig{figures/bounding_ellipse}
+\caption{Semi-definite programming is able to determine the tightest possible axis-aligned covariance, $\Lambda$, for a Gaussian required to drop to zero more slowly than Gaussian $g$, which has covariance $\Sigma$. For a bivariate example: on the left, the marginal log density for the two Gaussians; on the right, the two .24 probability iso-contours and lines indicating eigenvector directions.}
+\label{fig:bounding_ellipse}
+\end{figure}
 
 Another difference to traditional \sc{bq} is the nature of the observations available to us. As for standard \sc{bq}, we can evaluate $g(\vf)$ for any $\vf$, a \emph{point observation}. However, due to the curse of dimensionality, we are likely to require a very great number of such point evaluations in order to perform accurate inference for $\inty{g}$ in high dimension $D$. Similar approaches built around Monte Carlo sampling \citep{genz1992numerical} exist, but are similarly recognised as requiring a prohibitively large number of samples for high dimension. 
 
@@ -206,6 +215,7 @@ Such an integral that is expressible in closed form is the Gaussian \emph{convol
 \end{align}
 While we can compute $c_i$ for arbitrary $V_i$, the computation of \eqref{eq:Ksti} places constraints on our model. In particular, tractability requires that $\Omega$, $\Lambda$ and $V_i$ are all diagonal, so that \eqref{eq:Ksti} becomes the product of $D$ independent two-dimensional integrals.
 
+A comparison of point and convolution observations is provided by Figure \label{fig:observations}. 
 We restrict ourselves to consideration of such convolution observations henceforth.
 
 
