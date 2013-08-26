@@ -37,18 +37,18 @@
 ]
 
 \begin{abstract}%   <- trailing '%' for backward compatibility of .sty file
-We propose a new approach to approximate inference for Gaussian systems, Active Propagation (\ap). \ap actively learns about Gaussian integrals by sequentially selecting convolutions of the Gaussian likelihood that are maximally informative. Such Gaussian integrals, otherwise known as multivariate Gaussian cumulative distribution functions, occur in a variety of problems, particularly Gaussian process classification. Unlike the typical solutions to this problem, Expectation Propagation or Variational Bayes, \ap can be viewed as averaging over a large number of actively selected approximations. Unlike sampling techniques, such as Bayesian quadrature, the convolutions selected by \ap scale better to high dimension. We demonstrate our method both for synthetic Gaussian integrals, and on a real Gaussian process classification problem. 
+We propose a novel approach to approximate inference for Gaussian systems, Active Propagation (\ap). \ap actively learns about Gaussian integrals by sequentially selecting convolutions of the Gaussian likelihood that are maximally informative. Such Gaussian integrals, otherwise known as multivariate Gaussian cumulative distribution functions, occur in a variety of problems, particularly Gaussian process classification. Unlike the typical solutions to this problem, Expectation Propagation or Variational Bayes, \ap can be viewed as averaging over a large number of actively selected approximations. Unlike sampling techniques, such as Bayesian quadrature, the convolutions selected by \ap scale better to high dimension. We demonstrate our method both for synthetic Gaussian integrals, and on a real Gaussian process classification problem. 
 \end{abstract}
 
 
 \section{Introduction}
 
-Robust and fast inference for sophisticated models is perhaps the principal challenge for modern data analytics. We focus on the problem of such approximate inference for high-dimensional Gaussian systems. This often requires the calculation of multivariate Gaussian cumulative distribution functions, or \emph{Gaussian integrals}, such as 
+Robust and fast inference for sophisticated models is perhaps the principal challenge for modern data analytics. We focus on the problem of such approximate inference for high-dimensional Gaussian systems. This often requires the calculation of multivariate Gaussian cumulative distribution functions, or \emph{Gaussian integrals}, such as, for $\vf\in\reals^D$, and for positive semi-definite $\Sigma$ that is typically non-diagonal,
 \begin{align}\label{eq:GI}
 & \int_{\vl}^{\vu} \N{\vf}{\vmu}{\Sigma}~\ud \vf\nonumber\\
 & \deq \int_{l_1}^{u_1}\ldots\int_{l_D}^{u_D} \N{\vf}{\vmu}{\Sigma}~\ud f_D \ldots \ud f_1\,.
 \end{align}
-Figure \ref{fig:observations} illustrates a bivariate Gaussian integral. These integrals emerge from a variety of problems, including Gaussian process  classification \citep{GpsBook}, the Bayes Point Machine \citep{herbrich2001bayes}, censored regression \citep{ertin2007gaussian}, probit regression \citep{ochi1984likelihood} and ordinal regression \citep{chu2005gaussian}. While univariate Gaussian integrals can be computed with machine-level precision (using approximations to the error function), the multivariate case remains an active research problem \citep{cunningham2011approximate}. 
+Figure \ref{fig:observations} illustrates a bivariate Gaussian integral. These integrals emerge from a variety of problems, including Gaussian process (\gp) classification \citep{GpsBook}, the Bayes Point Machine \citep{herbrich2001bayes}, censored regression \citep{ertin2007gaussian}, probit regression \citep{ochi1984likelihood} and ordinal regression \citep{chu2005gaussian}. While univariate Gaussian integrals can be computed with machine-level precision (using approximations to the error function), the multivariate case remains an active research problem \citep{cunningham2011approximate}. 
 
 \begin{figure}
 \psfragfig{figures/observations}
@@ -58,78 +58,48 @@ Figure \ref{fig:observations} illustrates a bivariate Gaussian integral. These i
 
 Many approaches to inference for multivariate Gaussian models have been tested \citep{kuss2005assessing}. The first class of such approaches involve exploiting point observations of the Gaussian integrand. This category includes Markov chain Monte Carlo sampling methods, but the state of the art is found in found in numerical integration \citep{genz2009computation}. Unfortunately, these approaches incur a substantial computational burden and scale poorly to high dimension. A second class is found in approaches that directly approximate the likelihood with a simpler form, chosen after making observations of simpler integrals of the true likelihood. Examples include Variational Bayes (\vb) and Expectation Propagation \citep{minka2001expectation} (\ep); the latter has been empirically shown to be the method of choice \citep{nickisch2008approximations} under most realistic settings. 
 
-We propose a novel active learning approach to approximate inference for Gaussian problems, built upon recent work in Bayesian quadrature \citep{osborne2012active}. Bayesian quadrature has hitherto only been used with point observations; inspired by the success of \ep, our approach, active propagation (\ap) extends it to use observations of integrals of the true likelihood. \ap, unlike \ep, reports a final estimate for a Gaussian integral that is averaged over the many integral observations (successive approximations) selected by the algorithm. Similar averaging has been investigated by work in \vb \citep{gershman2012nonparametric} 
+We propose a novel active learning approach to approximate inference for Gaussian problems, built upon recent work in Bayesian quadrature (\bq) \citep{osborne2012active}. Bayesian quadrature has hitherto only been used with point observations; inspired by the success of \ep, our approach, active propagation (\ap) extends it to use observations of integrals of the true likelihood. \ap, unlike \ep, reports a final estimate for a Gaussian integral that is averaged over the many integral observations (successive approximations) selected by the algorithm. This gives a final approximation that is multimodel. Similar multimodal approximation has been investigated by work in \vb \citep{gershman2012nonparametric}. Unlike previous work in both \vb and \ep, \ap provides uncertainty estimates for a Gaussian integral, and actively selects integral observations so as to minimise the expectation of this uncertainty. We demonstrate how this feature leads \ap to significant empirical performance gains over competing approaches.
 
-selects integral observations so as to minimise the expected variance in the integral. It further
+\section{Gaussian models require Gaussian integrals}
 
-similar work in VB 
-(using a Gaussian mixture, similar to a GP with Gaussian covariance, uses observations of $\int q(\vx) \log g(\vx) \ud\vx$.
-
-
-
-
-
-\section{Gaussian process classification}
-
-
-
-We motivate the relevance of Gaussian integrals to \gp classification.
-
-
-
-We assume hyperparameters are known.
-\begin{align}
-\p{f\st}{\vy}
-& =
-\frac{\int\p{f\st}{\vf}\p{\vy}{\vf}p(\vf)\,\ud\vf}
-{\int \p{\vy}{\vf}p(\vf)\ud\vf}
-\\
-\p{y\st}{\vy}
-& =
-\frac{\iint\p{y\st}{f\st}\p{f\st}{\vf}\p{\vy}{\vf}p(\vf)\ud f\st\ud\vf}
-{\int\p{\vy}{\vf}p(\vf)\ud\vf}\,.
-\end{align}
+We briefly introduce the relevance of Gaussian integrals to Gaussian models; in particular, the case of \gp classification \citep{GpsBook}. In order to learn the hyperparameters of a discriminative classifier, we require the evidence (or marginal likelihood)
 \begin{equation}
-\p{\vy}{\vf} \deq \prod_{d=1}^{D}\p{y_d}{f_d}
+ p(\vy)=\int \p{\vy}{\vf}~p(\vf)~\ud\vf\,,
 \end{equation}
-
+where all quantities are implicitly conditioned on the hyperparameters, $\vy\in\{0,1\}^D$ are the observed class labels, and $\vf\in\reals^D$ are the associated latent function values. For a \gp classifier, the prior is a multivariate Gaussian, $p(\vf)= \N{\vf}{\vmu}{\Sigma}$. We take the likelihood
 \begin{align}
-\inty{g} = \int t(\vf)~\N{\vf}{\vmu}{\Sigma}~\ud \vf\nonumber\,,
-\end{align}
-where $t$ is a product of top-hat functions \eqref{eq:top_hat},
-\begin{align}
- t(\vf) & = \prod_{d=1}^{D} t(f_d).
-\end{align}
-
-For classification, we adopt the step function likelihood
-\begin{align}
- \p{y_d=1}{f_d} & \deq
-\begin{cases}
-1, & f_d>0\\
-0, & f_d\leq 0\,.
-\end{cases}
-\intertext{Note that the step function likelihood with Gaussian noise in the discriminant, $f$, is equivalent to the probit likelihood with a noiseless discriminant. More generally, we consider the top-hat likelihood to allow censored regression}
- \p{y_d=1}{f_d} \deq t(f_d) & \deq
+\p{\vy}{\vf} \deq t(\vf) & \deq \prod_{d=1}^{D} t(f_d) \label{eq:step_fn_likelihood}
+\intertext{where $t$ is a top-hat function,}
+t(f_d) & \deq
 \begin{cases}
 1, & l_d\leq f_d<u_d\\
-0, & \text{otherwise},
+0, & \text{otherwise}.
 \end{cases}
 \label{eq:top_hat}
 \end{align}
-we work with the latter henceforth.
+$l_d = 0$ and $u_d=\infty$ is the usual setting for \gp classification; we consider the more general case to encompass censored regression. Note that a model with likelihood  \eqref{eq:step_fn_likelihood} and Gaussian noise in the discriminant, $f$, is equivalent to the model with a probit likelihood with a noiseless discriminant. 
+
+Under this model, the evidence is a Gaussian integral,
+\begin{align}
+p(\vy) = \int t(\vf)~\N{\vf}{\vmu}{\Sigma}~\ud \vf = \int_{\vl}^{\vu} \N{\vf}{\vmu}{\Sigma}~\ud \vf\,.
+\label{eq:top_hat_inty_g}
+\end{align}
+
+
+
 
 \section{Bayesian Quadrature} \label{sec:bq}
 
 % Note that maximum likelihood is also subject to issues. $\p{D}{x,I}$, how come (known) $I$ is on the right and (known) $D$ is on the left? 
 
-\emph{Bayesian quadrature} \citep{BZHermiteQuadrature,BZMonteCarlo} is a means of performing Bayesian inference about the value of a potentially nonanalytic integral, \begin{equation}\label{eq:bq_integral}
-\inty{g} \deq \int g(\vx) p(\vx) \ud \vx
+\emph{Bayesian quadrature} (\bq) \citep{BZHermiteQuadrature,BZMonteCarlo} is a means of performing Bayesian inference about the value of a potentially nonanalytic integral, \begin{equation}\label{eq:bq_integral}
+\inty{g} \deq \int_{\vl}^{\vu} g(\vx)~ p(\vx)~\ud \vx
 \end{equation}
 
 
 Quadrature involves evaluating $g(\vx)$ at a matrix of sample points $X$, giving $\v{g}\deq g(X)$. Often this evaluation is computationally expensive; the consequent sparsity of samples introduces uncertainty about the function $f$ between them, and hence uncertainty about the integral $\inty{g}$.
 
-Most work on Bayesian quadrature chooses a \gp prior for $g$, with zero mean and the Gaussian covariance 
+Most work on \bq chooses a \gp prior for $g$, with zero mean and the Gaussian covariance 
 \begin{align} \label{eq:Gaussian_cov_fn}
 k(\vx,\vx') & \deq \rho^2 \N{\vx}{\vx'}{\Omega}\,.
 \end{align} 
@@ -144,38 +114,45 @@ Variables possessing a multivariate Gaussian distribution are jointly Gaussian d
 \nonumber\\
 & =\iint \inty{g}~\p{\inty{g}}{g}~\p{g}{\v{g}}~\ud \inty{g}~\ud g                                                                                                                                                               \nonumber\\
 &
- =\iint \inty{g}\,\delta\bigl(\inty{g} - {\textstyle\int g(\vx)\,p(\vx)\,\ud x}\bigr)
+ =\iint \inty{g}\,\delta\bigl(\inty{g} - {\textstyle\int_{\vl}^{\vu} g(\vx)\,p(\vx)\,\ud x}\bigr)
 \nonumber\\
 & \hspace{4cm}
 \N{g}{m_{g|X}}{C_{g|X}}\,\ud \inty{g} \,\ud g 
 \nonumber\\
 &
- = \int m_{g|X}(\vx)~p(\vx)~\ud \vx
+ = \int_{\vl}^{\vu} m_{g|X}(\vx)~p(\vx)~\ud \vx
 \,, \label{eq:mean_inty}
 \end{align}
 and, similarly, the variance is
 \begin{align} 
 V(\inty{g}\mid\v{g})
-=\iint p(\vx)~C_{g|X}(\vx, \vx')~p(\vx')~\ud \vx~\ud \vx'
-\,. \label{eq:var_inty}
+=\int_{\vl}^{\vu}\int_{\vl}^{\vu} p(\vx)\,C_{g|X}(\vx, \vx')\,p(\vx')\,\ud \vx\,\ud \vx'
+. \label{eq:var_inty}
 \end{align}
 Here we've used the following dense notation for the standard \gp expressions for the posterior mean $m$ and covariance $C$ respectively:
 \begin{align}
 m_{g|X}(\vx)& \deq k(\vx, X) k(X, X)^{-1} \v{g}\\
 C_{g|X}(\vx, \vx')& \deq k(\vx, \vx') - k(\vx, X) k(X, X)^{-1} k(X, \vx').
 \end{align}
-If the input density, $p(\vx)$, is Gaussian, \eqref{eq:mean_inty} is expressible in closed-form using standard Gaussian identities \citep{BZMonteCarlo}.
-The use of an importance re-weighting trick ($q(\vx) = \nicefrac{q(\vx)}{p(\vx)} p(\vx)$ for any $q(\vx)$) allows any other integral to be approximated. 
-%
-The corresponding closed-form expression for the posterior variance of $\inty{g}$ lends itself as a natural convergence diagnostic. 
+If $l_d=-\infty$, $u_d=\infty$ and the input density, $p(\vx)$, is Gaussian, standard Gaussian identities \citep{BZMonteCarlo} can be used to give closed-form expressions for \eqref{eq:mean_inty} and \eqref{eq:var_inty}. Further, if $p(\vx)$ has diagonal covariance, \eqref{eq:mean_inty} and \eqref{eq:var_inty} are expressible using error functions for any arbitrary $l_d$ and $u_d$.
+The use of an importance re-weighting trick ($q(\vx) = \nicefrac{q(\vx)}{p(\vx)} p(\vx)$ for any $q(\vx)$) allows integrals with respect to arbitrary $p(\vx)$ to be approximated. 
+
+The posterior variance of $\inty{g}$, \eqref{eq:var_inty}, provides a natural loss function for approximate inference: we follow \citet{osborne2012active} in Section \ref{sec:active} in minimising the expected variance to select observations. 
 
 \section{Bayesian quadrature for Gaussian integrals}
 
-We now return to the general Gaussian integral problem, \eqref{eq:GI}. In order to match \eqref{eq:GI} to \eqref{eq:bq_integral}, and thereby to use \bq, we firstly define 
+We now return to the general Gaussian integral,
+\begin{equation}
+ \inty{g}=\int_{\vl}^{\vu} g(\vf)~p(\vf)~\ud \vf\deq \int_{\vl}^{\vu} \N{\vf}{\vmu}{\Sigma}~\ud \vf
+\end{equation}
+where we define
 \begin{equation}
  g(\vf) \deq \N{\vf}{\vmu}{\Sigma}\,
 \end{equation}
-and adopt the improper input distribution, $p(\vf) = 1$. 
+and adopt the improper input distribution, $p(\vf) = 1$.%
+\footnote{
+ $p(\vf) = \N{\vf}{\vmu}{\Sigma}$, our \gp for $g$ would be required to 
+}
 
 We now assign a \gp prior 
 to the function $g: \reals^D \to \reals$, as in traditional \bq,
@@ -204,28 +181,34 @@ Here we have defined $\Lambda = \diag \v{\lambda}$, which both simplifies the se
 
 Another difference to traditional \sc{bq} is the nature of the observations available to us. As for standard \sc{bq}, we can evaluate $g(\vf)$ for any $\vf$, a \emph{point observation}. However, due to the curse of dimensionality, we are likely to require a very great number of such point evaluations in order to perform accurate inference for $\inty{g}$ in high dimension $D$. Similar approaches built around Monte Carlo sampling \citep{genz1992numerical} exist, but are similarly recognised as requiring a prohibitively large number of samples for high dimension. 
 
-An alternative is the class of \emph{slice observations}
-\begin{equation}
- \int \ldots \int \int_{l_d}^{u_d} \int \ldots \int g(\vf)~\ud f_D \ldots \ud f_d\ldots \ud f_1,
-\end{equation}
-which are expressible using standard error functions. Just as for sample evaluations, however, such observations are not very informative in high dimension. The problem for both types of observation is that, for increasingly high $D$, they are informative of only an increasingly tiny quantity of the domain over which $g$ must be integrated. What is needed is an observation of another integral over the whole of $\vf$.
+% An alternative is the class of \emph{slice observations}
+% \begin{equation}
+%  \int \ldots \int \int_{l_d}^{u_d} \int \ldots \int g(\vf)~\ud f_D \ldots \ud f_d\ldots \ud f_1,
+% \end{equation}
+% which are expressible using standard error functions. Just as for sample evaluations, however, such observations are not very informative in high dimension. The problem for both types of observation is that, for increasingly high $D$, they are informative of only an increasingly tiny quantity of the domain over which $g$ must be integrated. 
 
+An alternative is the observation of another integral over the whole of $\vf$: each such observation is likely informative of $g(\vf)$ for a larger set of $\vf$'s than a point observation.
 Such an integral that is expressible in closed form is the Gaussian \emph{convolution observation}
  \begin{equation}\label{eq:conv}
  c_i = \int \N{\vf}{\vm_i}{V_i}~g(\vf)~\ud \vf = \N{\vm_i}{\vmu}{V_i+\Sigma}.
 \end{equation}
- If the convolving Gaussian, $\N{\vf}{\vm_i}{V_i}$, is similar to the product of top-hat functions, $t(\vf)$, required to reproduce \eqref{eq:GI}, then such convolutions may permit useful inference for $\inty{g}$. The covariance between $\inty{g}$ and the convolution $c_i$ is
+ If the convolving Gaussian, $\N{\vf}{\vm_i}{V_i}$, is similar to the product of top-hat functions, $t(\vf)$, required for $c_i$ to equal the desired Gaussian integral (as per \eqref{eq:top_hat_inty_g}), then such convolutions may permit useful inference for $\inty{g}$. The covariance between $\inty{g}$ and the convolution $c_i$ is
 \begin{align}\label{eq:Ksti}
 \text{cov}\bigl(\inty{g}, c_i\bigr) =
 \int_{\vl}^{\vu} \int  k(\vf, \vf')~\N{\vf'}{\vm_i}{V_i}~\ud \vf' \ud \vf 
 \end{align}
 While we can compute $c_i$ for arbitrary $V_i$, the computation of \eqref{eq:Ksti} places constraints on our model. In particular, tractability requires that $\Omega$, $\Lambda$ and $V_i$ are all diagonal, so that \eqref{eq:Ksti} becomes the product of $D$ independent two-dimensional integrals.
 
+Note that \vb can be thought of as considering observations $\int q(\vx) \log g(\vx) \ud\vx$
+
+
+
 A comparison of point and convolution observations is provided by Figure \ref{fig:observations}. 
 We restrict ourselves to consideration of such convolution observations henceforth.
 
 
 \section{Active propagation: Active Bayesian Quadrature for Gaussian Integrals}
+\label{sec:active}
 
 We now turn to the problem of actively selecting appropriate convolution 
 
