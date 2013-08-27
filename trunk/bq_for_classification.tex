@@ -37,7 +37,9 @@
 ]
 
 \begin{abstract}%   <- trailing '%' for backward compatibility of .sty file
-We propose a novel approach to approximate inference for Gaussian systems, Active Propagation (\ap). \ap actively learns about Gaussian integrals by sequentially selecting convolutions of the Gaussian likelihood that are maximally informative. Such Gaussian integrals, otherwise known as multivariate Gaussian cumulative distribution functions, occur in a variety of problems, particularly Gaussian process classification. Unlike the typical solutions to this problem, Expectation Propagation or Variational Bayes, \ap can be viewed as averaging over a large number of actively selected approximations. Unlike sampling techniques, such as Bayesian quadrature, the convolutions selected by \ap scale better to high dimension. We demonstrate our method both for synthetic Gaussian integrals, and on a real Gaussian process classification problem. 
+We propose a novel approach to approximate inference for Gaussian systems, Active Propagation (\ap). \ap actively learns about Gaussian integrals by sequentially selecting convolutions of the Gaussian likelihood that are maximally informative. Such Gaussian integrals, otherwise known as multivariate Gaussian cumulative distribution functions, occur in a variety of problems, particularly Gaussian process classification. Unlike the typical solutions to this problem, Expectation Propagation or Variational Bayes, \ap can be viewed as averaging over a large number of actively selected approximations. Unlike sampling techniques, such as Bayesian quadrature, the convolutions selected by \ap scale better to high dimension. 
+% EVIDENCE
+%We demonstrate our method both for synthetic Gaussian integrals and on a real Gaussian process classification problem. 
 \end{abstract}
 
 
@@ -145,32 +147,16 @@ We now return to the general Gaussian integral,
 \begin{equation}
  \inty{g}=\int_{\vl}^{\vu} g(\vf)~p(\vf)~\ud \vf\deq \int_{\vl}^{\vu} \N{\vf}{\vmu}{\Sigma}~\ud \vf
 \end{equation}
-where we define
+where, using importance re-weighting, we define
 \begin{equation}
- g(\vf) \deq \N{\vf}{\vmu}{\Sigma}\,
+ p(\vf)\deq \N{f}{\vmu}{\Lambda}, \qquad g(\vf) \deq \frac{\N{\vf}{\vmu}{\Sigma}}{p(\vf)}\,.
 \end{equation}
-and adopt the improper input distribution, $p(\vf) = 1$.%
-\footnote{
- $p(\vf) = \N{\vf}{\vmu}{\Sigma}$, our \gp for $g$ would be required to 
-}
-
-We now assign a \gp prior 
-to the function $g: \reals^D \to \reals$, as in traditional \bq,
-\begin{equation}
- p(g) = \mathcal{GP}\bigl(g; 0 , k(\cdot,\cdot)\bigr).
-\end{equation}
- If we take $k$ as a stationary covariance, as is typical, the predictive variance for $\inty{g}$ is infinite: the $\iint k(\vx,\vx')\,\ud\vx\,\ud \vx'$ term in \eqref{eq:var_inty} is unbounded, regardless of $X$. Intuitively, given finite observations of $g$, there will always be an infinite amount of potentially unexplored mass of the integrand, $g(\vx)p(\vx)$. This infinite variance is not reflective of our true state of knowledge, however. We know that the light tails of the Gaussian cause $g$ to be arbitrarily small sufficiently far from $\v{\mu}$, bounding how much mass can have been missed. We can express this knowledge by using a more appropriate covariance. 
-
-In particular, we model $g$ as being the product of an unknown function, possessing the Gaussian covariance \eqref{eq:Gaussian_cov_fn}, and an isotropic Gaussian $\N{f}{\vmu}{\Lambda}$. This Gaussian represents a bounding envelope for $g$; we expect it to drop to zero more slowly than $g$. This requirement implies that $\Lambda - \Sigma$ must be positive semi-definite; if we further require the tightest such bound, we must simply solve the semi-definite program
+Importance re-weighting is motivated by the fact that $\Sigma$ is, in general, non-diagonal, rendering \eqref{eq:mean_inty} and \eqref{eq:var_inty} intractable. As such, we take $p(\vf)$ with covariance $\Lambda = \diag \v{\lambda}$. Beyond this, we want $p(\vf)$ to be diffuse: we don't want the prior to assign negligible mass to any $\vf$ where $\N{\vf}{\vmu}{\Sigma}$ is significant. Formally, $p(\vf)$ should drop to zero more slowly than $\N{\vf}{\vmu}{\Sigma}$; or that $\Lambda - \Sigma$ must be positive semi-definite. If we further require the tightest such bound, we must simply solve the semi-definite program
 \begin{align}
  \min_{\v{\lambda}\in\reals^D} & \sum_i \lambda_i\\
 \text{subject to } & \diag{\v{\lambda}} - \Sigma \succeq 0~.
 \end{align}
-Here we have defined $\Lambda = \diag \v{\lambda}$, which both simplifies the semi-definite program and allows tractable inference, as we'll see later. An example of a bounding Gaussian determined by semi-definite programming is contained in Figure \ref{fig:bounding_ellipse}. In conclusion, we arrive at the covariance%
-\footnote{Note that if we have a Gaussian prior $\N{a}{\alpha}{\beta^2}$ for an arbitrary variable $a$, the prior for its product with known $b$, $c = a b$, is $\N{c}{b \alpha}{b \beta^2 b}$.}
-\begin{align}
- & \text{cov}\bigl(g(\vf), g(\vf')\bigr) = k(\vf, \vf')\nonumber\\ & \deq \rho^2~\N{\vf}{\vmu}{\Lambda}~\N{\vf}{\vf'}{\Omega}~\N{\vf'}{\vmu}{\Lambda}\,.
-\end{align}
+Taking $\Lambda$ as diagonal also has the fortunate consequence of simplifying the semi-definite program. An example of a bounding Gaussian determined by semi-definite programming is contained in Figure \ref{fig:bounding_ellipse}.
 
 \begin{figure}
 \psfragfig{figures/bounding_pdf}
@@ -178,6 +164,13 @@ Here we have defined $\Lambda = \diag \v{\lambda}$, which both simplifies the se
 \caption{Semi-definite programming is able to determine the tightest possible axis-aligned covariance, $\Lambda$, for a Gaussian required to drop to zero more slowly than Gaussian $g$, which has covariance $\Sigma$. For a bivariate example: on the left, the marginal log density for the two Gaussians; on the right, the two .24 probability iso-contours and lines indicating eigenvector directions.}
 \label{fig:bounding_ellipse}
 \end{figure}
+
+We assign a \gp prior 
+to the function $g: \reals^D \to \reals$,
+\begin{equation}
+ p(g) = \mathcal{GP}\bigl(g; 0 , k(\cdot,\cdot)\bigr).
+\end{equation}
+ where $k$ is the Gaussian covariance \eqref{eq:Gaussian_cov_fn}. We can now proceed as in traditional \bq. 
 
 Another difference to traditional \sc{bq} is the nature of the observations available to us. As for standard \sc{bq}, we can evaluate $g(\vf)$ for any $\vf$, a \emph{point observation}. However, due to the curse of dimensionality, we are likely to require a very great number of such point evaluations in order to perform accurate inference for $\inty{g}$ in high dimension $D$. Similar approaches built around Monte Carlo sampling \citep{genz1992numerical} exist, but are similarly recognised as requiring a prohibitively large number of samples for high dimension. 
 
