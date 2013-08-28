@@ -195,7 +195,12 @@ Such an integral that is expressible in closed form is the Gaussian \emph{convol
 While we can compute $c_i$ for arbitrary $V_i$, the computation of \eqref{eq:Ksti} places constraints on our model. In particular, tractability requires that $\Omega$, $\Lambda$ and $V_i$ are all diagonal, so that \eqref{eq:Ksti} becomes the product of $D$ independent two-dimensional integrals.
 
 
-\ep considers $\int q(\vx) g(\vx) \ud\vx$ observations
+\ep considers observations
+\begin{align*}
+ \int t_d(x_d)~\N{\vx}{\vm_i}{V_i}~\N{\vx}{\vmu}{\Lambda}~g(\vx)~\ud \vx,\\
+  \int x_d~t_d(x_d)~\N{\vx}{\vm_i}{V_i}~\N{\vx}{\vmu}{\Lambda}~g(\vx)~\ud \vx,\\
+ \int x_d^2~t_d(x_d)~\N{\vx}{\vm_i}{V_i}~\N{\vx}{\vmu}{\Lambda}~g(\vx)~\ud \vx,
+\end{align*}
 
 that \vb can be thought of as considering observations $\int q(\vx) \log g(\vx) \ud\vx$
 
