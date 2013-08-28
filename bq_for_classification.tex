@@ -30,7 +30,7 @@
 \aistatsaddress{ 
 % Department of Engineering Science \\
 % University of Oxford \\
-% Oxford OX1 3PJ, UK\\
+% Oxford OF1 3PJ, UK\\
 % \url{mosb@robots.ox.ac.uk} 
 \And 
 }
@@ -99,11 +99,11 @@ p(\vy) = \int t(\vf)~\N{\vf}{\vmu}{\Sigma}~\ud \vf = \int_{\vl}^{\vu} \N{\vf}{\v
 \end{equation}
 
 
-Quadrature involves evaluating $g(\vx)$ at a matrix of sample points $X$, giving $\v{g}\deq g(X)$. Often this evaluation is computationally expensive; the consequent sparsity of samples introduces uncertainty about the function $f$ between them, and hence uncertainty about the integral $\inty{g}$.
+Quadrature involves evaluating $g(\vx)$ at a matrix of sample points $F$, giving $\v{g}\deq g(F)$. Often this evaluation is computationally expensive; the consequent sparsity of samples introduces uncertainty about the function $g$ between them, and hence uncertainty about the integral $\inty{g}$.
 
 Most work on \bq chooses a \gp prior for $g$, with zero mean and the Gaussian covariance 
 \begin{align} \label{eq:Gaussian_cov_fn}
-k(\vx,\vx') & \deq \rho^2 \N{\vx}{\vx'}{\Omega}\,.
+\text{cov}\bigl(g(f),g(f')\bigr)=k(\vx,\vx') & \deq \rho^2 \N{\vx}{\vx'}{\Omega}\,.
 \end{align} 
 This covariance, firstly, has hyperparameter $\rho$, 
 termed the output scale. The input covariance $\Omega$ is also parameterised by further hyperparameters: in this, as in previous work, we'll take $\Omega$ as diagonal, with its diagonal elements defined by input, or length, scale hyperparameters.  These hyperparameters are typically fitted using type two maximum likelihood.
@@ -116,25 +116,25 @@ Variables possessing a multivariate Gaussian distribution are jointly Gaussian d
 \nonumber\\
 & =\iint \inty{g}~\p{\inty{g}}{g}~\p{g}{\v{g}}~\ud \inty{g}~\ud g                                                                                                                                                               \nonumber\\
 &
- =\iint \inty{g}\,\delta\bigl(\inty{g} - {\textstyle\int_{\vl}^{\vu} g(\vx)\,p(\vx)\,\ud x}\bigr)
+ =\iint \inty{g}\,\delta\bigl(\inty{g} - {\textstyle\int_{\vl}^{\vu} g(\vx)\,p(\vx)\,\ud \vx}\bigr)
 \nonumber\\
 & \hspace{4cm}
-\N{g}{m_{g|X}}{C_{g|X}}\,\ud \inty{g} \,\ud g 
+\N{g}{m_{g|F}}{C_{g|F}}\,\ud \inty{g} \,\ud g 
 \nonumber\\
 &
- = \int_{\vl}^{\vu} m_{g|X}(\vx)~p(\vx)~\ud \vx
+ = \int_{\vl}^{\vu} m_{g|F}(\vx)~p(\vx)~\ud \vx
 \,, \label{eq:mean_inty}
 \end{align}
 and, similarly, the variance is
 \begin{align} 
 V(\inty{g}\mid\v{g})
-=\int_{\vl}^{\vu}\int_{\vl}^{\vu} p(\vx)\,C_{g|X}(\vx, \vx')\,p(\vx')\,\ud \vx\,\ud \vx'
+=\int_{\vl}^{\vu}\int_{\vl}^{\vu} p(\vx)\,C_{g|F}(\vx, \vx')\,p(\vx')\,\ud \vx\,\ud \vx'
 . \label{eq:var_inty}
 \end{align}
 Here we've used the following dense notation for the standard \gp expressions for the posterior mean $m$ and covariance $C$ respectively:
 \begin{align}
-m_{g|X}(\vx)& \deq k(\vx, X) k(X, X)^{-1} \v{g}\\
-C_{g|X}(\vx, \vx')& \deq k(\vx, \vx') - k(\vx, X) k(X, X)^{-1} k(X, \vx').
+m_{g|F}(\vx)& \deq k(\vx, F) k(F, F)^{-1} \v{g}\\
+C_{g|F}(\vx, \vx')& \deq k(\vx, \vx') - k(\vx, F) k(F, F)^{-1} k(F, \vx').
 \end{align}
 If $l_d=-\infty$, $u_d=\infty$ and the input density, $p(\vx)$, is Gaussian, standard Gaussian identities \citep{BZMonteCarlo} can be used to give closed-form expressions for \eqref{eq:mean_inty} and \eqref{eq:var_inty}. Further, if $p(\vx)$ has diagonal covariance, \eqref{eq:mean_inty} and \eqref{eq:var_inty} are expressible using error functions for any arbitrary $l_d$ and $u_d$.
 The use of an importance re-weighting trick ($q(\vx) = \nicefrac{q(\vx)}{p(\vx)} p(\vx)$ for any $q(\vx)$) allows integrals with respect to arbitrary $p(\vx)$ to be approximated. 
@@ -147,16 +147,34 @@ We now return to the general Gaussian integral,
 \begin{equation}
  \inty{g}=\int_{\vl}^{\vu} g(\vf)~p(\vf)~\ud \vf\deq \int_{\vl}^{\vu} \N{\vf}{\vmu}{\Sigma}~\ud \vf
 \end{equation}
-where, using importance re-weighting, we define
+where we define
 \begin{equation}
- p(\vf)\deq \N{f}{\vmu}{\Lambda}, \qquad g(\vf) \deq \frac{\N{\vf}{\vmu}{\Sigma}}{p(\vf)}\,.
+ g(\vf) \deq \N{\vf}{\vmu}{\Sigma}\,
 \end{equation}
-Importance re-weighting is motivated by the fact that $\Sigma$ is, in general, non-diagonal, rendering \eqref{eq:mean_inty} and \eqref{eq:var_inty} intractable. As such, we take $p(\vf)$ with covariance $\Lambda = \diag \v{\lambda}$. Beyond this, we want $p(\vf)$ to be diffuse: we don't want the prior to assign negligible mass to any $\vf$ where $\N{\vf}{\vmu}{\Sigma}$ is significant. Formally, $p(\vf)$ should drop to zero more slowly than $\N{\vf}{\vmu}{\Sigma}$; or that $\Lambda - \Sigma$ must be positive semi-definite. If we further require the tightest such bound, we must simply solve the semi-definite program
+and adopt the improper input distribution, $p(\vf) = 1$.%
+\footnote{
+We cannot choose $p(\vf)=\N{\vf}{\vmu}{\Sigma}$, as $\Sigma$ is, in general, non-diagonal.
+Likewise, the use of importance re-weighting, by defining $p(\vf)$ as a convenient Gaussian and $g(\vf) \deq \frac{\N{\vf}{\vmu}{\Sigma}}{p(\vf)}$, is ruled out by our requirement of the tractable integration of $g$ over regions of $\vf$; this is impossible if $g$ is chosen to be a ratio of Gaussians.
+} 
+We now assign a \gp prior 
+to the function $g: \reals^D \to \reals$,
+\begin{equation}
+ p(g) = \mathcal{GP}\bigl(g; 0 , k(\cdot,\cdot)\bigr).
+\end{equation}
+ If we take $k$ as a stationary covariance, as is typical, the predictive variance for $\inty{g}$ is infinite: the $\iint k(\vf,\vf')\,\ud\vf\,\ud \vf'$ term in \eqref{eq:var_inty} is unbounded, regardless of $F$. 
+% cuttable
+Intuitively, given a finite number of observations of $g$, there will always be an infinite amount of potentially unexplored mass of the integrand, $g(\vf)p(\vf)$. However, we know that the light tails of the Gaussian cause $g$ to be arbitrarily small sufficiently far from $\v{\mu}$, bounding how much mass can have been missed. We can express this knowledge by using a more appropriate covariance for $g$. 
+
+In particular, we model $g(\vf) = h(\vf)~\N{\vf}{\vmu}{\Lambda}$, where $p(h)$ is a \gp with the Gaussian covariance \eqref{eq:Gaussian_cov_fn}. We want $\N{\vf}{\vmu}{\Lambda}$ to be diffuse: we don't want it to assign negligible mass to any $\vf$ where $g(\vf)$ is significant. Formally, $\N{\vf}{\vmu}{\Lambda}$ should drop to zero more slowly than $g(\vf)$; or that $\Lambda - \Sigma$ must be positive semi-definite. If we further require the tightest such bound, we must simply solve the semi-definite program
 \begin{align}
  \min_{\v{\lambda}\in\reals^D} & \sum_i \lambda_i\\
 \text{subject to } & \diag{\v{\lambda}} - \Sigma \succeq 0~.
 \end{align}
-Taking $\Lambda$ as diagonal also has the fortunate consequence of simplifying the semi-definite program. An example of a bounding Gaussian determined by semi-definite programming is contained in Figure \ref{fig:bounding_ellipse}.
+Here we have defined $\Lambda = \diag \v{\lambda}$, which both simplifies the semi-definite program and allows tractable inference, as we'll see later. An example of a bounding Gaussian determined by semi-definite programming is contained in Figure \ref{fig:bounding_ellipse}. In conclusion, we arrive at the covariance%
+\footnote{Note that if we have a Gaussian prior $\N{a}{\alpha}{\beta^2}$ for an arbitrary variable $a$, the prior for its product with known $b$, $c = a b$, is $\N{c}{b \alpha}{b \beta^2 b}$.}
+\begin{align} \label{eq:g_cov}
+ & \text{cov}\bigl(g(\vf), g(\vf')\bigr) = k(\vf, \vf')\nonumber\\ & \deq \rho^2~\N{\vf}{\vmu}{\Lambda}~\N{\vf}{\vf'}{\Omega}~\N{\vf'}{\vmu}{\Lambda}\,.
+\end{align}
 
 \begin{figure}
 \psfragfig{figures/bounding_pdf}
@@ -164,13 +182,6 @@ Taking $\Lambda$ as diagonal also has the fortunate consequence of simplifying t
 \caption{Semi-definite programming is able to determine the tightest possible axis-aligned covariance, $\Lambda$, for a Gaussian required to drop to zero more slowly than Gaussian $g$, which has covariance $\Sigma$. For a bivariate example: on the left, the marginal log density for the two Gaussians; on the right, the two .24 probability iso-contours and lines indicating eigenvector directions.}
 \label{fig:bounding_ellipse}
 \end{figure}
-
-We assign a \gp prior 
-to the function $g: \reals^D \to \reals$,
-\begin{equation}
- p(g) = \mathcal{GP}\bigl(g; 0 , k(\cdot,\cdot)\bigr).
-\end{equation}
- where $k$ is the Gaussian covariance \eqref{eq:Gaussian_cov_fn}. We can now proceed as in traditional \bq. 
 
 Another difference to traditional \sc{bq} is the nature of the observations available to us. As for standard \sc{bq}, we can evaluate $g(\vf)$ for any $\vf$, a \emph{point observation}. However, due to the curse of dimensionality, we are likely to require a very great number of such point evaluations in order to perform accurate inference for $\inty{g}$ in high dimension $D$. Similar approaches built around Monte Carlo sampling \citep{genz1992numerical} exist, but are similarly recognised as requiring a prohibitively large number of samples for high dimension. 
 
@@ -180,19 +191,27 @@ Another difference to traditional \sc{bq} is the nature of the observations avai
 % \end{equation}
 % which are expressible using standard error functions. Just as for sample evaluations, however, such observations are not very informative in high dimension. The problem for both types of observation is that, for increasingly high $D$, they are informative of only an increasingly tiny quantity of the domain over which $g$ must be integrated. 
 
-An alternative is the observation of another integral over the whole of $\vf$: each such observation is likely informative of $g(\vf)$ for a larger set of $\vf$'s than a point observation.
+An alternative is the observation of an integral over the whole of $\vf$: each such observation is likely informative of $g(\vf)$ for a larger set of $\vf$'s than a point observation.
 Such an integral that is expressible in closed form is the Gaussian \emph{convolution observation}
  \begin{equation}\label{eq:conv}
  c_i = \int \N{\vf}{\vm_i}{V_i}~g(\vf)~\ud \vf = \N{\vm_i}{\vmu}{V_i+\Sigma}.
 \end{equation}
- If the convolving Gaussian, $\N{\vf}{\vm_i}{V_i}$, is similar to the product of top-hat functions, $t(\vf)$, required for $c_i$ to equal the desired Gaussian integral (as per \eqref{eq:top_hat_inty_g}), then such convolutions may permit useful inference for $\inty{g}$. The covariance between $\inty{g}$ and the convolution $c_i$ is
+ If the convolving Gaussian, $\N{\vf}{\vm_i}{V_i}$, is similar to the product of top-hat functions, $t(\vf)$, required for $c_i$ to equal the desired Gaussian integral (as per \eqref{eq:top_hat_inty_g}), then such convolutions may permit useful inference for $\inty{g}$. The covariance between $\inty{g}$ and $c_i$ is
 \begin{align}\label{eq:Ksti}
 \text{cov}\bigl(\inty{g}, c_i\bigr) =
 \int_{\vl}^{\vu} \int  k(\vf, \vf')~\N{\vf'}{\vm_i}{V_i}~\ud \vf' \ud \vf 
 \end{align}
 While we can compute $c_i$ for arbitrary $V_i$, the computation of \eqref{eq:Ksti} places constraints on our model. In particular, tractability requires that $\Omega$, $\Lambda$ and $V_i$ are all diagonal, so that \eqref{eq:Ksti} becomes the product of $D$ independent two-dimensional integrals.
 
-Note that \vb can be thought of as considering observations $\int q(\vx) \log g(\vx) \ud\vx$
+
+\ep considers $\int q(\vx) g(\vx) \ud\vx$ observations
+
+that \vb can be thought of as considering observations $\int q(\vx) \log g(\vx) \ud\vx$
+
+
+\begin{figure}
+ \caption{draws from covariance \eqref{eq:g_cov}}
+\end{figure}
 
 
 
