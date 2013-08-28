@@ -70,9 +70,9 @@ We briefly introduce the relevance of Gaussian integrals to Gaussian models; in 
 \end{equation}
 where all quantities are implicitly conditioned on the hyperparameters, $\vy\in\{0,1\}^D$ are the observed class labels, and $\vx\in\reals^D$ are the associated latent discriminant function values.\footnote{Note that $\vx$ is not used to denote a vector of features, as is often the case in classification literature.} For a \gp classifier, the prior on $\vx$ is a multivariate Gaussian, $p(\vx)= \N{\vx}{\vmu}{\Sigma}$. We take the likelihood
 \begin{align}
-\p{\vy}{\vx} = t(\vx) & \deq \prod_{d=1}^{D} t(x_d) \label{eq:step_fn_likelihood}
+\p{\vy}{\vx} = t(\vx) & \deq \prod_{d=1}^{D} t_d(x_d) \label{eq:step_fn_likelihood}
 \intertext{where $t$ is a top-hat function,}
-t(x_d) & \deq
+t_d(x_d) & \deq
 \begin{cases}
 1, & l_d\leq x_d<u_d\\
 0, & \text{otherwise}.
@@ -116,7 +116,7 @@ Variables possessing a multivariate Gaussian distribution are jointly Gaussian d
 \nonumber\\
 & =\iint \inty{g}~\p{\inty{g}}{g}~\p{g}{\v{g}}~\ud \inty{g}~\ud g                                                                                                                                                               \nonumber\\
 &
- =\iint \inty{g}\,\delta\bigl(\inty{g} - {\textstyle\int_{\vl}^{\vu} g(\vx)\,p(\vx)\,\ud \vx}\bigr)
+ =\iint \inty{g}\,\delta\bigl(\inty{g} - {\textstyle\int g(\vx)\,p(\vx)\,\ud \vx}\bigr)
 \nonumber\\
 & \hspace{4cm}
 \N{g}{m_{g|X}}{C_{g|X}}\,\ud \inty{g} \,\ud g 
@@ -136,7 +136,7 @@ Here we've used the following dense notation for the standard \gp expressions fo
 m_{g|X}(\vx)& \deq k(\vx, X) k(X, X)^{-1} \v{g}\\
 C_{g|X}(\vx, \vx')& \deq k(\vx, \vx') - k(\vx, X) k(X, X)^{-1} k(X, \vx').
 \end{align}
-If $q(\vx)= t(\vx)~\N{\vx}{\vmu}{\Lambda}$, $l_d=-\infty$ and $u_d=\infty$  standard Gaussian identities \citep{BZMonteCarlo} can be used to give closed-form expressions for \eqref{eq:mean_inty} and \eqref{eq:var_inty}. Further, if $q(\vx)= t(\vx)~\N{\vx}{\vmu}{\Lambda}$ and $\Lambda$ is diagonal, \eqref{eq:mean_inty} and \eqref{eq:var_inty} are expressible using error functions for any arbitrary $l_d$ and $u_d$.
+If $q(\vx)= t(\vx)~\N{\vx}{\vmu}{\Lambda}$, $l_d=-\infty$ and $u_d=\infty$,  standard Gaussian identities \citep{BZMonteCarlo} can be used to give closed-form expressions for \eqref{eq:mean_inty} and \eqref{eq:var_inty}. Further, if $q(\vx)= t(\vx)~\N{\vx}{\vmu}{\Lambda}$ and $\Lambda$ is diagonal, \eqref{eq:mean_inty} and \eqref{eq:var_inty} are expressible using error functions for any arbitrary $l_d$ and $u_d$.
 The use of an importance re-weighting trick (the use of $\tilde{q}(\vx) = \nicefrac{\tilde{q}(\vx)}{q(\vx)} q(\vx)$ for any $\tilde{q}(\vx)$) allows integrals with respect to arbitrary $q(\vx)$ to be approximated. 
 
 The posterior variance of $\inty{g}$, \eqref{eq:var_inty}, provides a natural loss function for approximate inference: we follow \citet{osborne2012active} in Section \ref{sec:active} in minimising the expected variance to select observations. 
@@ -161,7 +161,7 @@ Taking $\Lambda$ as diagonal also has the fortunate consequence of simplifying t
 \begin{figure}
 \psfragfig{figures/bounding_pdf}
 \psfragfig{figures/bounding_ellipse}
-\caption{Semi-definite programming is able to determine the tightest possible axis-aligned covariance, $\Lambda$, for a Gaussian required to drop to zero more slowly than Gaussian $g$, which has covariance $\Sigma$. For a bivariate example: on the left, the marginal log density for the two Gaussians; on the right, the two .24 probability iso-contours and lines indicating eigenvector directions.}
+\caption{Semi-definite programming is able to determine the tightest possible axis-aligned covariance, $\Lambda$, for a Gaussian required to drop to zero more slowly than $\N{\vx}{\vmu}{\Sigma}$. For a bivariate example: on the left, the marginal log density for the two Gaussians; on the right, the two .24 probability iso-contours and lines indicating eigenvector directions.}
 \label{fig:bounding_ellipse}
 \end{figure}
 
@@ -175,11 +175,11 @@ to the function $g: \reals^D \to \reals$,
 Another difference to traditional \sc{bq} is the nature of the observations available to us. As for standard \sc{bq}, we can evaluate $g(\vx)$ for any $\vx$, a \emph{point observation}. However, due to the curse of dimensionality, we are likely to require a very great number of such point evaluations in order to perform accurate inference for $\inty{g}$ in high dimension $D$. Similar approaches built around Monte Carlo sampling \citep{genz1992numerical} exist, but are similarly recognised as requiring a prohibitively large number of samples for high dimension. 
 
 
-% An alternative is the class of \emph{slice observations}
-% \begin{equation}
-%  \int \ldots \int \int_{l_d}^{u_d} \int \ldots \int g(\vx)~\ud x_D \ldots \ud x_d\ldots \ud x_1,
-% \end{equation}
-% which are expressible using standard error functions. Just as for sample evaluations, however, such observations are not very informative in high dimension. The problem for both types of observation is that, for increasingly high $D$, they are informative of only an increasingly tiny quantity of the domain over which $g$ must be integrated. 
+An alternative is the class of \emph{slice observations}
+\begin{equation}
+ \int t_d(x_d)~\N{\vx}{\vm_i}{V_i}~\N{\vx}{\vmu}{\Lambda}~g(\vx)~\ud \vx,
+\end{equation}
+which are expressible using standard error functions. Just as for sample evaluations, however, such observations are not very informative in high dimension. The problem for both types of observation is that, for increasingly high $D$, they are informative of only an increasingly tiny quantity of the domain over which $g$ must be integrated. 
 
 An alternative is the observation of an integral over the whole of $\vx$: each such observation is likely informative of $g(\vx)$ for a larger set of $\vx$'s than a point observation.
 Such an integral that is expressible in closed form is the Gaussian \emph{convolution observation}
