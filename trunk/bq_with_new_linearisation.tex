@@ -1,0 +1,130 @@
+\documentclass[twoside]{article}
+\usepackage{aistats2e}
+
+% For figures
+%\usepackage{\ellraphicx} % more modern
+%\usepackage{epsfig} % less modern
+\usepackage{preamble}
+\usepackage{natbib}
+
+
+
+
+\usepackage{usbib}
+\bibliographystyle{myusmeg-a}
+\renewcommand{\citenamefont}[1]{\textsc{\MakeLowercase{#1}}}
+\renewcommand{\bibnamefont}[1]{\textsc{#1}}
+\renewcommand*{\bibname}{biblography}
+
+%\DeclareCaptionType{copyrightbox}
+
+\begin{document}
+
+\twocolumn[
+
+\aistatstitle{New linearisation for Bayesian Quadrature}
+
+\aistatsauthor{ 
+%Michael A. Osborne \And Roman   Garnett
+}
+\aistatsaddress{ 
+% Department of Engineering Science \\
+% University of Oxford \\
+% Oxford OF1 3PJ, UK\\
+% \url{mosb@robots.ox.ac.uk} 
+\And 
+}
+]
+
+\begin{abstract}%   <- trailing '%' for backward compatibility of .sty file
+\end{abstract}
+
+
+\section{Introduction}
+
+
+
+\section{Bayesian Quadrature} \label{sec:bq}
+
+% Note that maximum likelihood is also subject to issues. $\p{D}{x,I}$, how come (known) $I$ is on the right and (known) $D$ is on the left? 
+
+\emph{Bayesian quadrature} (\bq) \citep{BZHermiteQuadrature,BZMonteCarlo} is a means of performing Bayesian inference about the value of a potentially nonanalytic integral, \begin{equation}\label{eq:bq_integral}
+\inty{\ell}\deq \int \ell(\vx)~ q(\vx)~\ud \vx\,.
+\end{equation}
+Here $\ell$ is typically an expensive, multimodal or unknown function and $q$ is a simpler function, often an input density. 
+Quadrature involves evaluating $\ell(\vx)$ at a matrix of sample points $F$, giving $\v{\ell}\deq \ell(X)$. Often this evaluation is computationally expensive; the consequent sparsity of samples introduces uncertainty about the function $\ell$ between them, and hence uncertainty about the integral $\inty{\ell}$.
+
+Most work on \bq chooses a \gp prior for $\ell$, with zero mean and the Gaussian covariance 
+\begin{align} \label{eq:Gaussian_cov_fn}
+\text{cov}\bigl(\ell(f),\ell(f')\bigr)=k(\vx,\vx') & \deq \rho^2 \N{\vx}{\vx'}{\Omega}\,.
+\end{align} 
+The choice of covariance is coupled with the choice of $q$: we'll later see that we require that $\int k(\vx',\vx) q(\vx) \ud\vx$ is tractable.
+The Gaussian covariance \eqref{eq:Gaussian_cov_fn}, has hyperparameters $\rho$, along with those parameterising the input covariance $\Omega$. In this, as in previous work, we'll take $\Omega$ as diagonal.  We'll fit these hyperparameters are using type two maximum likelihood. 
+
+Variables possessing a multivariate Gaussian distribution are jointly Gaussian distributed with any affine transformations of those variables. Because integration is affine, we can hence use computed samples $\v{\ell}$ to perform analytic Gaussian process inference about the value of integrals over $\ell(x)$, such as $\inty{\ell}$. The mean estimate for $\inty{\ell}$ given $\v{\ell}$ is
+%
+\begin{align} 
+&
+\mean{\inty{\ell}}{\v{\ell}} 
+\nonumber\\
+& =\iint \inty{\ell}~\p{\inty{\ell}}{\ell}~\p{\ell}{\v{\ell}}~\ud \inty{\ell}~\ud g                                                                                                                                                               \nonumber\\
+&
+ =\iint \inty{\ell}\,\delta\bigl(\inty{\ell}- {\textstyle\int \ell(\vx)\,p(\vx)\,\ud \vx}\bigr)
+\nonumber\\
+& \hspace{4cm}
+\N{\ell}{m_{\ell|X}}{C_{\ell|X}}\,\ud \inty{\ell}\,\ud g 
+\nonumber\\
+&
+ = \int m_{\ell|X}(\vx)~q(\vx)~\ud \vx
+\,, \label{eq:mean_inty}
+\end{align}
+and, similarly, the variance is
+\begin{align} 
+V(\inty{\ell}\mid\v{\ell})
+=\int \int q(\vx)\,C_{\ell|X}(\vx, \vx')\,q(\vx')\,\ud \vx\,\ud \vx'
+. \label{eq:var_inty}
+\end{align}
+Here we've used the following dense notation for the standard \gp expressions for the posterior mean $m$ and covariance $C$ respectively:
+\begin{align}
+m_{\ell|X}(\vx)& \deq k(\vx, X) k(X, X)^{-1} \v{\ell}\\
+C_{\ell|X}(\vx, \vx')& \deq k(\vx, \vx') - k(\vx, X) k(X, X)^{-1} k(X, \vx').
+\end{align}
+If $q(\vx)= t(\vx)~\N{\vx}{\vmu}{\Lambda}$, $l_d=-\infty$ and $u_d=\infty$,  standard Gaussian identities \citep{BZMonteCarlo} can be used to give closed-form expressions for \eqref{eq:mean_inty} and \eqref{eq:var_inty}. Further, if $q(\vx)= t(\vx)~\N{\vx}{\vmu}{\Lambda}$ and $\Lambda$ is diagonal, \eqref{eq:mean_inty} and \eqref{eq:var_inty} are expressible using error functions for any arbitrary $l_d$ and $u_d$.
+The use of an importance re-weighting trick (the use of $\tilde{q}(\vx) = \nicefrac{\tilde{q}(\vx)}{q(\vx)} q(\vx)$ for any $\tilde{q}(\vx)$) allows integrals with respect to arbitrary $q(\vx)$ to be approximated. 
+
+The posterior variance of $\inty{\ell}$, \eqref{eq:var_inty}, provides a natural loss function for approximate inference: we follow \citet{osborne2012active} in Section \ref{sec:active} in minimising the expected variance to select observations. 
+
+\section{Gaussian process modelling of likelihood functions}
+We aim to come up with a transform $f(\tl) = \ell$, $f\colon \reals \to \reals^+$ that is both monotonically increasing and has monotonically increasing derivative. 
+Our transform $f$ must satisfy the constraints
+\begin{align}
+ f(0) & = \ell_\text{min} \label{eq:f_constraint_1}\\
+ (\theta_1 - 0)\, f'(0) & = a\,(\ell_\text{max} - \ell_\text{min}) \label{eq:f_constraint_2}\\
+ f'(\theta_1) & = \ell_\text{max} 
+\label{eq:f_constraint_3}\\
+ (\theta_1 - 0)\, f'(\theta_1) & = b\,(\ell_\text{max} - \ell_\text{min}). 
+\label{eq:f_constraint_4}
+\end{align}
+We choose
+\begin{equation}
+ f(\tl) = \theta_2 + \theta_3 \tl + \theta_4 \tl^2.
+\end{equation}
+
+
+
+
+\begin{figure*}
+ \psfragfig{figures/lik_v_tlik}
+\psfragfig{figures/gps_lik_tlik}
+\caption{}
+\end{figure*}
+
+
+\section{Quadrature propagation: Bayesian Quadrature for Gaussian Integrals}
+\label{sec:active}
+
+We now turn to the problem of selecting appropriate convolution 
+
+
+\bibliography{bub}
+\end{document}
