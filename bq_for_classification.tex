@@ -103,7 +103,7 @@ Quadrature involves evaluating $g(\vx)$ at a matrix of sample points $F$, giving
 
 Most work on \bq chooses a \gp prior for $g$, with zero mean and the Gaussian covariance 
 \begin{align} \label{eq:Gaussian_cov_fn}
-\text{cov}\bigl(g(f),g(f')\bigr)=k(\vx,\vx') & \deq \rho^2 \N{\vx}{\vx'}{\Omega}\,.
+\text{cov}\bigl(g(\vx),g(\vx')\bigr)=k(\vx,\vx') & \deq \rho^2 \N{\vx}{\vx'}{\Omega}\,.
 \end{align} 
 The choice of covariance is coupled with the choice of $q$: we'll later see that we require that $\int k(\vx',\vx) q(\vx) \ud\vx$ is tractable.
 The Gaussian covariance \eqref{eq:Gaussian_cov_fn}, has hyperparameters $\rho$, along with those parameterising the input covariance $\Omega$. In this, as in previous work, we'll take $\Omega$ as diagonal.  We'll fit these hyperparameters are using type two maximum likelihood. 
@@ -215,6 +215,18 @@ A comparison of point and convolution observations is provided by Figure \ref{fi
 We restrict ourselves to consideration of such convolution observations henceforth.
 
 \section{Gaussian process modelling of likelihood functions}
+
+Our transform $f(\tl) = \ell$, $f\colon \reals \to \reals^+$ must satisfy the constraints
+\begin{align}
+ f(0) & = \ell_\text{min} \label{eq:f_constraint_1}\\
+ (\theta_1 - 0)\, f'(0) & = a\,(\ell_\text{max} - \ell_\text{min}) \label{eq:f_constraint_2}\\
+ f'(\theta_1) & = \ell_\text{max} 
+\label{eq:f_constraint_3}\\
+ (\theta_1 - 0)\, f'(\theta_1) & = b\,(\ell_\text{max} - \ell_\text{min}). 
+\label{eq:f_constraint_4}
+\end{align}
+
+
 
 \begin{figure*}
  \psfragfig{figures/lik_v_tlik}
