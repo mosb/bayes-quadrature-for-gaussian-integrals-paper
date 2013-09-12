@@ -99,8 +99,8 @@ We aim to come up with a transform $f(\tl) = \ell$, $f\colon \reals \to \reals^+
 Our transform $f$ must satisfy the constraints
 \begin{align}
  f(0) & = \ell_\text{min} \label{eq:f_constraint_1}\\
- (\theta_1 - 0)\, f'(0) & = a\,(\ell_\text{max} - \ell_\text{min}) \label{eq:f_constraint_2}\\
- f'(\theta_1) & = \ell_\text{max} 
+ (\theta_1 - 0)\, f'(-\theta_1) & = a\,(\ell_\text{max} - \ell_\text{min}) \label{eq:f_constraint_2}\\
+ f(\theta_1) & = \ell_\text{max} 
 \label{eq:f_constraint_3}\\
  (\theta_1 - 0)\, f'(\theta_1) & = b\,(\ell_\text{max} - \ell_\text{min}). 
 \label{eq:f_constraint_4}
@@ -109,7 +109,7 @@ We choose
 \begin{equation}
  f(\tl) = \theta_2 + \theta_3 \tl + \theta_4 \tl^2.
 \end{equation}
-
+\eqref{eq:f_constraint_2} says that shrinkage for a point as far below the minimum as the maximum is above it must be $a$.
 
 
 
