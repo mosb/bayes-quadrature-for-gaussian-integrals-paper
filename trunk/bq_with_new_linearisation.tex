@@ -95,22 +95,27 @@ The use of an importance re-weighting trick (the use of $\tilde{q}(\vx) = \nicef
 The posterior variance of $\inty{\ell}$, \eqref{eq:var_inty}, provides a natural loss function for approximate inference: we follow \citet{osborne2012active} in Section \ref{sec:active} in minimising the expected variance to select observations. 
 
 \section{Gaussian process modelling of likelihood functions}
-We aim to come up with a transform $f(\tl) = \ell$, $f\colon \reals \to \reals^+$ that is both monotonically increasing and has monotonically increasing derivative. 
-Our transform $f$ must satisfy the constraints
+Let's define $\ell\mx = \ell(x\mx)$ as the maximum observed likelihood, and likewise $\ell\mn = \ell(x\mn)$ the minimum. We aim to come up with a transform $f(\tl) = \ell$, $f\colon \reals \to \reals^+$ that is both monotonically increasing and has monotonically increasing derivative. 
+Our transform $f$ must satisfy the constraints 
 \begin{align}
- f(0) & = \ell_\text{min} \label{eq:f_constraint_1}\\
- (\theta_1 - 0)\, f'(-\theta_1) & = a\,(\ell_\text{max} - \ell_\text{min}) \label{eq:f_constraint_2}\\
- f(\theta_1) & = \ell_\text{max} 
-\label{eq:f_constraint_3}\\
- (\theta_1 - 0)\, f'(\theta_1) & = b\,(\ell_\text{max} - \ell_\text{min}). 
+ f(0) & = 0 \label{eq:f_constraint_1}\\
+ f\biggl(\frac{\sqrt{\ell\mx}}{\gamma}\biggr) & = \ell\mx 
+\label{eq:f_constraint_2}\\
+ \beta\, f'(c\,\beta) & = a\,(\ell\mx - \ell\mn) \label{eq:f_constraint_3}\\
+ \beta\, f'(d\,\beta) & = b\,(\ell\mx - \ell\mn). 
 \label{eq:f_constraint_4}
 \end{align}
+Constraints \eqref{eq:f_constraint_1} and \eqref{eq:f_constraint_2} simply the set the scale of our latent transformed space; without loss of generality, we can set  
+$\text{min}_{x}\,\tl(x)=0$. $\tl(x\mx)=\beta$ is left as a free parameter. 
+
+We have $\sd\bigl(\tl(x)\bigr) \lesssim (\beta - 0)$: that is, the \sd of a \gp posterior at $x$ is typically less than the range of the observations on which it is conditioned. Hence, under our linearisation, the left-hand-side of \eqref{eq:f_constraint_3} is the approximate $\sd$ of $p\bigl(\ell(x)\bigl)$ for $\tl(x) = c \tl(x\mx)=c \beta$, some fraction of the maximum value for our set of observations. The right-hand-side expresses the constraint that this should be a pre-set fraction $a$ of the range of observed likelihoods. If we select $a\in \reals^+$ and $c\in \reals$ as small, this constraint is motivated by our desideratum that likelihoods have small mean also have small \sd. Similarly, if we select $b\in \reals^+$ and $d\in \reals$ as large, constraint \eqref{eq:f_constraint_4} is motivated by our desire that likelihoods with large mean have large \sd .
+
+
 We choose
 \begin{equation}
- f(\tl) = \theta_2 + \theta_3 \tl + \theta_4 \tl^2.
+ f(\tl) = \gamma\,\tl^2.
 \end{equation}
-\eqref{eq:f_constraint_2} says that shrinkage for a point as far below the minimum as the maximum is above it must be $a$.
-
+which trivially satisfies \eqref{eq:f_constraint_1}.
 
 
 \begin{figure*}
